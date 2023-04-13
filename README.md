@@ -12,6 +12,7 @@ MapComplete-MQTT is a serrvice publishing statistics about [OpenStreetMap](https
   },
   "users": {
     "total": 3,
+    "top": "user2",
     "users": {
       "user1": 1,
       "user2": 2
@@ -19,6 +20,7 @@ MapComplete-MQTT is a serrvice publishing statistics about [OpenStreetMap](https
   },
   "themes": {
     "total": 3,
+    "top": "etymology, cyclofix, advertising",
     "themes": {
       "etymology": 1,
       "cyclofix": 1,

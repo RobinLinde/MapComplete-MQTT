@@ -53,6 +53,16 @@ async function main() {
   setInterval(async () => update(client), 1000 * 60 * 5);
 }
 
+function findTop(item: Record<string, number>): string {
+  // Get the highest value
+  const highest = Math.max(...Object.values(item));
+  // Get the key or keys with the highest value
+  const keys = Object.keys(item).filter((k) => item[k] === highest);
+
+  // Return the key or keys with the highest value
+  return keys.length === 1 ? keys[0] : keys.join(", ");
+}
+
 /**
  * Function to update the changesets and publish the data to MQTT
  *
@@ -91,7 +101,7 @@ async function update(client: AsyncMqttClient) {
   // Parse the response
   const data: APIResponse = await response.json();
 
-  console.log(`Found ${data.features.length} changesets`);
+  console.log(`Found ${data.features.length} new changesets`);
 
   // Loop through the changesets
   for (const changeset of data.features) {
@@ -138,7 +148,7 @@ async function update(client: AsyncMqttClient) {
   ).size;
 
   // Themes
-  const themes = mapCompleteChangesets.reduce((acc, cur) => {
+  let themes = mapCompleteChangesets.reduce((acc, cur) => {
     // Get the theme from the changeset
     const theme = cur.properties.metadata["theme"];
     // If the theme is not in the object, add it
@@ -149,6 +159,10 @@ async function update(client: AsyncMqttClient) {
     acc[theme]++;
     return acc;
   }, {} as Record<string, number>);
+  // Sort the themes by the number of changesets
+  themes = Object.fromEntries(
+    Object.entries(themes).sort(([, a], [, b]) => b - a)
+  );
 
   // Make a list of colors for each changeset
   const colors = mapCompleteChangesets.map((c) => {
@@ -170,10 +184,12 @@ async function update(client: AsyncMqttClient) {
     },
     users: {
       total: userCount,
+      top: findTop(users),
       users,
     },
     themes: {
       total: themeCount,
+      top: findTop(themes),
       themes,
     },
   };
@@ -181,6 +197,18 @@ async function update(client: AsyncMqttClient) {
   // Log the statistics
   console.log(
     `Total changesets for today: ${statistics.changesets.total} by ${statistics.users.total} users, using ${statistics.themes.total} different themes`
+  );
+  console.log(
+    `Top 5 users: ${Object.entries(statistics.users.users)
+      .slice(0, 5)
+      .map(([user, count]) => `${user} (${count})`)
+      .join(", ")}`
+  );
+  console.log(
+    `Top 5 themes: ${Object.entries(statistics.themes.themes)
+      .slice(0, 5)
+      .map(([theme, count]) => `${theme} (${count})`)
+      .join(", ")}`
   );
 
   // Publish the statistics to MQTT
