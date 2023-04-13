@@ -26,7 +26,10 @@ MapComplete-MQTT is a serrvice publishing statistics about [OpenStreetMap](https
       "cyclofix": 1,
       "advertising": 1
     }
-  }
+  },
+  "questions": 10,
+  "images": 2,
+  "points": 3
 }
 ```
 
