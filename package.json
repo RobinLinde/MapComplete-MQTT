@@ -1,0 +1,24 @@
+{
+  "name": "mapcompletestats",
+  "version": "1.0.0",
+  "description": "Small app parsing OSM changes to MQTT",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "ts-node src/index.ts"
+  },
+  "keywords": [
+    "mapcomplete",
+    "osm",
+    "mqtt"
+  ],
+  "author": "Robin van der Linde",
+  "license": "ISC",
+  "dependencies": {
+    "@types/geojson": "^7946.0.10",
+    "@types/node": "^18.15.11",
+    "async-mqtt": "^2.6.3",
+    "dotenv": "^16.0.3",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.3"
+  }
+}
