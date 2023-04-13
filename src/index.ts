@@ -177,6 +177,45 @@ async function update(client: AsyncMqttClient) {
     return themeColors.default;
   });
 
+  // Total number of answered questions of all changesets
+  const questions = mapCompleteChangesets.reduce((acc, cur) => {
+    // Check if the changeset has the answer metadata
+    if (cur.properties.metadata["answer"] === undefined) {
+      // Skip this changeset
+      return acc;
+    }
+    // Get the number of answered questions from the changeset
+    const changesetQuestions = parseInt(cur.properties.metadata["answer"]);
+    // Add the number of answered questions to the total
+    return acc + changesetQuestions;
+  }, 0);
+
+  // Total number of added images of all changesets
+  const images = mapCompleteChangesets.reduce((acc, cur) => {
+    // Check if the changeset has the image metadata
+    if (cur.properties.metadata["add-image"] === undefined) {
+      // Skip this changeset
+      return acc;
+    }
+    // Get the number of added images from the changeset
+    const changesetImages = parseInt(cur.properties.metadata["add-image"]);
+    // Add the number of added images to the total
+    return acc + changesetImages;
+  }, 0);
+
+  // Total number of added points of all changesets
+  const points = mapCompleteChangesets.reduce((acc, cur) => {
+    // Check if the changeset has the create metadata
+    if (cur.properties.metadata["create"] === undefined) {
+      // Skip this changeset
+      return acc;
+    }
+    // Get the number of added points from the changeset
+    const changesetPoints = parseInt(cur.properties.metadata["create"]);
+    // Add the number of added points to the total
+    return acc + changesetPoints;
+  }, 0);
+
   const statistics = {
     changesets: {
       total,
@@ -192,6 +231,9 @@ async function update(client: AsyncMqttClient) {
       top: findTop(themes),
       themes,
     },
+    questions,
+    images,
+    points,
   };
 
   // Log the statistics
@@ -209,6 +251,9 @@ async function update(client: AsyncMqttClient) {
       .slice(0, 5)
       .map(([theme, count]) => `${theme} (${count})`)
       .join(", ")}`
+  );
+  console.log(
+    `Total questions answered: ${statistics.questions}, total images added: ${statistics.images}, total points added: ${statistics.points}`
   );
 
   // Publish the statistics to MQTT
