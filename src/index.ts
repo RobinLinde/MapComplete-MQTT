@@ -18,6 +18,11 @@ const themeColors = {
   cyclofix: "#e2783d",
   advertising: "#fffe73",
   aed: "#008855",
+  cycle_infra: "#f7d728",
+  drinking_water: "#66bef3",
+  maxspeed: "#e41408",
+  onwheels: "#22ca60",
+  postboxes: "#ff6242",
 };
 
 // Variables for storing the changesets
