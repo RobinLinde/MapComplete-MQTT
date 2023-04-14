@@ -10,6 +10,7 @@ const mqtt_port = process.env.MQTT_PORT
   : 1883;
 const mqtt_username = process.env.MQTT_USERNAME || "";
 const mqtt_password = process.env.MQTT_PASSWORD || "";
+const dry_run = process.env.DRY_RUN === "True" || false;
 
 // Lookup table
 const themeColors = {
@@ -53,6 +54,27 @@ async function main() {
   setInterval(async () => update(client), 1000 * 60 * 5);
 }
 
+/**
+ * Function to convert a hex color code to an RGB color code
+ *
+ * @param hex Hex color code
+ * @returns RGB color code
+ */
+function hexToRgb(hex: string): number[] {
+  const bigint = parseInt(hex.replace("#", ""), 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+
+  return [r, g, b];
+}
+
+/**
+ * Small function to find the top value in an object
+ *
+ * @param item The object to find the top value in
+ * @returns The key or keys with the highest value
+ */
 function findTop(item: Record<string, number>): string {
   // Get the highest value
   const highest = Math.max(...Object.values(item));
@@ -220,6 +242,7 @@ async function update(client: AsyncMqttClient) {
     changesets: {
       total,
       colors,
+      colorsRgb: colors.map((c) => hexToRgb(c)),
     },
     users: {
       total: userCount,
@@ -256,10 +279,15 @@ async function update(client: AsyncMqttClient) {
     `Total questions answered: ${statistics.questions}, total images added: ${statistics.images}, total points added: ${statistics.points}`
   );
 
-  // Publish the statistics to MQTT
-  await client.publish("mapcomplete/statistics", JSON.stringify(statistics), {
-    retain: true,
-  });
+  if (!dry_run) {
+    // Publish the statistics to MQTT
+    console.log("Publishing statistics to MQTT");
+    await client.publish("mapcomplete/statistics", JSON.stringify(statistics), {
+      retain: true,
+    });
+  } else {
+    console.log("Dry run, not publishing statistics to MQTT", statistics);
+  }
 
   // Update the lastChangesetTime
   lastUpdateTime = new Date().getTime();

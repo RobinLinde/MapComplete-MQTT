@@ -8,7 +8,12 @@ MapComplete-MQTT is a serrvice publishing statistics about [OpenStreetMap](https
 {
   "changesets": {
     "total": 3,
-    "colors": ["#70c549", "#e2783d", "#fffe73"]
+    "colors": ["#70c549", "#e2783d", "#fffe73"],
+    "colorsRgb": [
+      [112, 197, 73],
+      [226, 120, 61],
+      [255, 254, 115]
+    ]
   },
   "users": {
     "total": 3,
