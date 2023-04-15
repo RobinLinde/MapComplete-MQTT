@@ -287,6 +287,50 @@ async function update(client: AsyncMqttClient) {
     await client.publish("mapcomplete/statistics", JSON.stringify(statistics), {
       retain: true,
     });
+
+    // Also publish everything to its own topic
+    for (const [key, value] of Object.entries(statistics)) {
+      // Handle nested objects
+      if (typeof value === "object") {
+        for (const [subKey, subValue] of Object.entries(value)) {
+          await client.publish(
+            `mapcomplete/statistics/${key}/${subKey}`,
+            JSON.stringify(subValue),
+            {
+              retain: true,
+            }
+          );
+        }
+        // Also publish the whole object
+        await client.publish(
+          `mapcomplete/statistics/${key}`,
+          JSON.stringify(value),
+          {
+            retain: true,
+          }
+        );
+      } else if (typeof value === "number") {
+        await client.publish(
+          `mapcomplete/statistics/${key}`,
+          value.toString(),
+          {
+            retain: true,
+          }
+        );
+      } else if (typeof value === "string") {
+        await client.publish(`mapcomplete/statistics/${key}`, value, {
+          retain: true,
+        });
+      } else {
+        await client.publish(
+          `mapcomplete/statistics/${key}`,
+          JSON.stringify(value),
+          {
+            retain: true,
+          }
+        );
+      }
+    }
   } else {
     console.log("Dry run, not publishing statistics to MQTT", statistics);
   }
