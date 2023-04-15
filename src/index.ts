@@ -15,15 +15,20 @@ const dry_run = process.env.DRY_RUN === "True" || false;
 // Lookup table
 const themeColors = {
   default: "#70c549",
-  personal: "#37d649",
-  cyclofix: "#e2783d",
   advertising: "#fffe73",
   aed: "#008855",
+  benches: "#896847",
   cycle_infra: "#f7d728",
+  cyclofix: "#e2783d",
   drinking_water: "#66bef3",
+  grb: "#ffe615",
   maxspeed: "#e41408",
+  natuurpunt: "#93bb0f",
   onwheels: "#22ca60",
+  personal: "#37d649",
   postboxes: "#ff6242",
+  toerisme_vlaanderen: "#038003",
+  trees: "#008000",
 };
 
 // Variables for storing the changesets
