@@ -242,7 +242,9 @@ async function update(client: AsyncMqttClient) {
     changesets: {
       total,
       colors,
+      colorsStr: colors.join(","),
       colorsRgb: colors.map((c) => hexToRgb(c)),
+      colorsRgbStr: colors.map((c) => hexToRgb(c)).join(","),
     },
     users: {
       total: userCount,
