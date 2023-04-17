@@ -46,6 +46,7 @@ Most items are also available on their own topic, e.g. `mapcomplete/statistics/c
     "total": 3,
     "last": 1234,
     "lastColor": "#fffe73",
+    "lastColorRgb": [255, 254, 115],
     "colors": ["#70c549", "#e2783d", "#fffe73"],
     "colorsStr": "#70c549,#e2783d,#fffe73",
     "colorsRgb": [
