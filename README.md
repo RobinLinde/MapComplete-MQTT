@@ -45,6 +45,7 @@ Most items are also available on their own topic, e.g. `mapcomplete/statistics/c
   "changesets": {
     "total": 3,
     "last": 1234,
+    "lastColor": "#fffe73",
     "colors": ["#70c549", "#e2783d", "#fffe73"],
     "colorsStr": "#70c549,#e2783d,#fffe73",
     "colorsRgb": [

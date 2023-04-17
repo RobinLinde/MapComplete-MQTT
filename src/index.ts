@@ -250,6 +250,7 @@ async function update(client: AsyncMqttClient) {
     changesets: {
       total,
       last: mapCompleteChangesets[mapCompleteChangesets.length - 1].id,
+      lastColor: colors[colors.length - 1],
       colors,
       colorsStr: colors.join(","),
       colorsRgb: colors.map((c) => hexToRgb(c)),
