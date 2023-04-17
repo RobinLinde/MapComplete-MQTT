@@ -1,5 +1,5 @@
 import * as dotenv from "dotenv";
-import { AsyncMqttClient, connect, connectAsync } from "async-mqtt";
+import { AsyncMqttClient, connectAsync } from "async-mqtt";
 import type { APIResponse, Changeset } from "./@types/osmcha";
 
 // Standard variables
@@ -11,6 +11,9 @@ const mqtt_port = process.env.MQTT_PORT
 const mqtt_username = process.env.MQTT_USERNAME || "";
 const mqtt_password = process.env.MQTT_PASSWORD || "";
 const dry_run = process.env.DRY_RUN === "True" || false;
+
+// Configure timezone
+process.env.TZ = "Europe/London";
 
 // Lookup table
 const themeColors = {
@@ -246,6 +249,7 @@ async function update(client: AsyncMqttClient) {
   const statistics = {
     changesets: {
       total,
+      last: mapCompleteChangesets[mapCompleteChangesets.length - 1].id,
       colors,
       colorsStr: colors.join(","),
       colorsRgb: colors.map((c) => hexToRgb(c)),
@@ -254,11 +258,15 @@ async function update(client: AsyncMqttClient) {
     users: {
       total: userCount,
       top: findTop(users),
+      last: mapCompleteChangesets[mapCompleteChangesets.length - 1].properties
+        .user,
       users,
     },
     themes: {
       total: themeCount,
       top: findTop(themes),
+      last: mapCompleteChangesets[mapCompleteChangesets.length - 1].properties
+        .metadata["theme"],
       themes,
     },
     questions,

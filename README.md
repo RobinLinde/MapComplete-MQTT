@@ -44,6 +44,7 @@ Most items are also available on their own topic, e.g. `mapcomplete/statistics/c
 {
   "changesets": {
     "total": 3,
+    "last": 1234,
     "colors": ["#70c549", "#e2783d", "#fffe73"],
     "colorsStr": "#70c549,#e2783d,#fffe73",
     "colorsRgb": [
@@ -55,6 +56,7 @@ Most items are also available on their own topic, e.g. `mapcomplete/statistics/c
   },
   "users": {
     "total": 3,
+    "last": "user2",
     "top": "user2",
     "users": {
       "user1": 1,
@@ -64,6 +66,7 @@ Most items are also available on their own topic, e.g. `mapcomplete/statistics/c
   "themes": {
     "total": 3,
     "top": "etymology, cyclofix, advertising",
+    "last": "advertising",
     "themes": {
       "etymology": 1,
       "cyclofix": 1,
