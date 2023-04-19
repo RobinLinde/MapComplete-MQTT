@@ -68,7 +68,7 @@ async function main() {
  * @param hex Hex color code
  * @returns RGB color code
  */
-function hexToRgb(hex: string): number[] {
+function hexToRgb(hex: string): [number, number, number] {
   const bigint = parseInt(hex.replace("#", ""), 16);
   const r = (bigint >> 16) & 255;
   const g = (bigint >> 8) & 255;
@@ -246,12 +246,44 @@ async function update(client: AsyncMqttClient) {
     return acc + changesetPoints;
   }, 0);
 
+  let lastId: number | null;
+  let lastUser: string | null;
+  let lastTheme: string | null;
+  let lastColor: string;
+  let lastColorRgb: [number, number, number] | null;
+
+  // Check if we actually have any changesets before we try to get the last changeset
+  if (mapCompleteChangesets.length > 0) {
+    // Get the last changeset
+    const lastChangeset =
+      mapCompleteChangesets[mapCompleteChangesets.length - 1];
+    // Get the last changeset ID
+    lastId = lastChangeset.id;
+    // Get the last changeset user
+    lastUser = lastChangeset.properties.user;
+    // Get the last changeset theme
+    lastTheme = lastChangeset.properties.metadata["theme"];
+    // Get the last changeset color
+    lastColor = colors[colors.length - 1];
+    lastColorRgb = hexToRgb(lastColor);
+  } else {
+    // Set the last changeset ID to null
+    lastId = null;
+    // Set the last changeset user to null
+    lastUser = null;
+    // Set the last changeset theme to null
+    lastTheme = null;
+    // Set the last changeset color to null
+    lastColor = null;
+    lastColorRgb = null;
+  }
+
   const statistics = {
     changesets: {
       total,
-      last: mapCompleteChangesets[mapCompleteChangesets.length - 1].id,
-      lastColor: colors[colors.length - 1],
-      lastColorRgb: hexToRgb(colors[colors.length - 1]),
+      last: lastId,
+      lastColor,
+      lastColorRgb,
       colors,
       colorsStr: colors.join(","),
       colorsRgb: colors.map((c) => hexToRgb(c)),
@@ -260,15 +292,13 @@ async function update(client: AsyncMqttClient) {
     users: {
       total: userCount,
       top: findTop(users),
-      last: mapCompleteChangesets[mapCompleteChangesets.length - 1].properties
-        .user,
+      last: lastUser,
       users,
     },
     themes: {
       total: themeCount,
       top: findTop(themes),
-      last: mapCompleteChangesets[mapCompleteChangesets.length - 1].properties
-        .metadata["theme"],
+      last: lastTheme,
       themes,
     },
     questions,
