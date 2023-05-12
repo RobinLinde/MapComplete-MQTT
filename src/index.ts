@@ -2,6 +2,7 @@ import * as dotenv from "dotenv";
 import { AsyncMqttClient, connectAsync } from "async-mqtt";
 import type { APIResponse, Changeset } from "./@types/osmcha";
 import { createLogger, transports, format } from "winston";
+import FakeClient from "./FakeClient";
 
 // Standard variables
 dotenv.config();
@@ -68,12 +69,17 @@ if (process.env.OSMCHA_TOKEN === undefined) {
  * Main loop connecting to MQTT and performing the update
  */
 async function main() {
-  const client = await connectAsync({
-    host: mqtt_host,
-    port: mqtt_port,
-    username: mqtt_username,
-    password: mqtt_password,
-  });
+  let client: AsyncMqttClient | FakeClient;
+  if (!dry_run) {
+    client = await connectAsync({
+      host: mqtt_host,
+      port: mqtt_port,
+      username: mqtt_username,
+      password: mqtt_password,
+    });
+  } else {
+    client = new FakeClient(logger);
+  }
 
   // Perform initial update
   await update(client);
@@ -127,7 +133,7 @@ function findTop(item: Record<string, number>): string {
  *
  * @param client The MQTT client to publish the data to
  */
-async function update(client: AsyncMqttClient) {
+async function update(client: AsyncMqttClient | FakeClient) {
   logger.info("Performing update");
   // Check if the last update time is still today
   if (new Date(lastUpdateTime).getDate() !== new Date().getDate()) {
@@ -428,7 +434,7 @@ async function update(client: AsyncMqttClient) {
  *
  * @param client MQTT client
  */
-async function publishConfig(client: AsyncMqttClient) {
+async function publishConfig(client: AsyncMqttClient | FakeClient) {
   /**
    * Mapping of all payloads for each sensor to their respective topics
    */
