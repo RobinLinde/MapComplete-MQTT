@@ -1,7 +1,7 @@
 import * as dotenv from "dotenv";
 import { AsyncMqttClient, connectAsync } from "async-mqtt";
 import type { APIResponse, Changeset } from "./@types/osmcha";
-import winston = require("winston");
+import { createLogger, transports, format } from "winston";
 
 // Standard variables
 dotenv.config();
@@ -14,18 +14,18 @@ const mqtt_password = process.env.MQTT_PASSWORD || "";
 const dry_run = process.env.DRY_RUN === "True" || false;
 
 // Create a logger
-const logger = winston.createLogger({
+const logger = createLogger({
   transports: [
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.printf(
+    new transports.Console({
+      format: format.combine(
+        format.timestamp(),
+        format.printf(
           (info) => `${info.timestamp} ${info.level}: ${info.message}`
         ),
-        winston.format.colorize({ all: true })
+        format.colorize({ all: true })
       ),
     }),
-    new winston.transports.File({
+    new transports.File({
       filename: "mapcomplete-stats.log",
     }),
   ],
