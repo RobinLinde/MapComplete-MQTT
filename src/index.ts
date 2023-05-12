@@ -33,8 +33,8 @@ const logger = createLogger({
   level: "info",
 });
 
-// Configure timezone
-process.env.TZ = "Europe/London";
+// Configure timezone to UTC
+process.env.TZ = "UTC";
 
 // Lookup table
 const themeColors = {
@@ -144,18 +144,23 @@ async function update(client: AsyncMqttClient | FakeClient) {
     lastUpdateTime = new Date().setHours(0, 0, 0, 0);
   }
 
-  // Get date in YYYY-MM-DD HH:MM:SS format
-  const date = new Date(lastUpdateTime - 1000 * 60 * 10)
-    .toISOString()
-    .slice(0, 19)
-    .replace("T", " ");
+  // Get date in YYYY-MM-DD HH:MM:SS format, minus 10 minutes to account for delays, unless this means we go back to yesterday
+  let date = new Date(lastUpdateTime - 1000 * 60 * 10).getTime();
+
+  if (date < new Date().setHours(0, 0, 0, 0)) {
+    date = new Date().setHours(0, 0, 0, 0);
+  }
+
+  const dateStr = new Date(date).toISOString().slice(0, 19).replace("T", " ");
+
+  logger.info(`Getting changesets since ${dateStr}`);
 
   // Wrap the update in a try/catch block, so we can catch errors
   try {
     // Get the changesets from OSMCha
     const response = await fetch(
       `https://osmcha.org/api/v1/changesets/?date__gte=${encodeURIComponent(
-        date
+        dateStr
       )}&editor=MapComplete`,
       {
         headers: {
