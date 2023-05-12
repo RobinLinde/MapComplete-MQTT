@@ -76,10 +76,19 @@ async function main() {
   });
 
   // Perform initial update
-  update(client);
+  await update(client);
 
-  // Create a loop to send a message every 5 minutes
-  setInterval(async () => update(client), 1000 * 60 * 5);
+  // Publish the configuration
+  await publishConfig(client);
+
+  if (!dry_run) {
+    // Create a loop to send a message every 5 minutes
+    setInterval(async () => update(client), 1000 * 60 * 5);
+  } else {
+    logger.info("Dry run, not creating interval, exiting");
+    // Wait 5 seconds before exiting
+    setTimeout(() => process.exit(0), 5000);
+  }
 }
 
 /**
@@ -411,6 +420,128 @@ async function update(client: AsyncMqttClient) {
     lastUpdateTime = new Date().getTime();
   } catch (error) {
     logger.error("Error while updating statistics", error);
+  }
+}
+
+/**
+ * Function to publish Home Assistant configuration to MQTT
+ *
+ * @param client MQTT client
+ */
+async function publishConfig(client: AsyncMqttClient) {
+  /**
+   * Mapping of all payloads for each sensor to their respective topics
+   */
+  const sensors = {
+    "homeassistant/sensor/mapcomplete/totalChangesets/config": {
+      name: "MapComplete Changesets Today",
+      unit_of_measurement: "changesets",
+      state_topic: "mapcomplete/statistics/changesets/total",
+      icon: "mdi:map-marker",
+      unique_id: "mapcomplete_changesets_total",
+    },
+    "homeassistant/sensor/mapcomplete/lastChangeset/config": {
+      name: "MapComplete Last Changeset",
+      state_topic: "mapcomplete/statistics/changesets/last",
+      icon: "mdi:map-marker",
+      unique_id: "mapcomplete_changesets_last",
+      enabled_by_default: false,
+    },
+    "homeassistant/sensor/mapcomplete/lastChangesetColor/config": {
+      name: "MapComplete Last Changeset Color",
+      state_topic: "mapcomplete/statistics",
+      icon: "mdi:palette",
+      unique_id: "mapcomplete_changesets_last_color",
+      enabled_by_default: false,
+      value_template: "{{ value_json.changesets.lastColor }}",
+    },
+    "homeassistant/sensor/mapcomplete/lastChangesetColorRgb/config": {
+      name: "MapComplete Last Changeset Color RGB",
+      state_topic: "mapcomplete/statistics",
+      icon: "mdi:palette",
+      unique_id: "mapcomplete_changesets_last_color_rgb",
+      enabled_by_default: false,
+      value_template: "{{ value_json.changesets.lastColorRgb }}",
+    },
+    "homeassistant/sensor/mapcomplete/totalUsers/config": {
+      name: "MapComplete Users Today",
+      unit_of_measurement: "users",
+      state_topic: "mapcomplete/statistics/users/total",
+      icon: "mdi:account",
+      unique_id: "mapcomplete_users_total",
+    },
+    "homeassistant/sensor/mapcomplete/lastUser/config": {
+      name: "MapComplete Last User",
+      state_topic: "mapcomplete/statistics",
+      icon: "mdi:account",
+      unique_id: "mapcomplete_users_last",
+      value_template: "{{ value_json.users.last }}",
+    },
+    "homeassistant/sensor/mapcomplete/topUser/config": {
+      name: "MapComplete Top User(s)",
+      state_topic: "mapcomplete/statistics",
+      icon: "mdi:account",
+      unique_id: "mapcomplete_users_top",
+      value_template: "{{ value_json.users.top }}",
+    },
+    "homeassistant/sensor/mapcomplete/totalThemes/config": {
+      name: "MapComplete Themes Used Today",
+      unit_of_measurement: "themes",
+      state_topic: "mapcomplete/statistics/themes/total",
+      icon: "mdi:palette",
+      unique_id: "mapcomplete_themes_total",
+    },
+    "homeassistant/sensor/mapcomplete/lastTheme/config": {
+      name: "MapComplete Last Theme",
+      state_topic: "mapcomplete/statistics",
+      icon: "mdi:palette",
+      unique_id: "mapcomplete_themes_last",
+      value_template: "{{ value_json.themes.last }}",
+    },
+    "homeassistant/sensor/mapcomplete/topTheme/config": {
+      name: "MapComplete Top Theme(s)",
+      state_topic: "mapcomplete/statistics",
+      icon: "mdi:palette",
+      unique_id: "mapcomplete_themes_top",
+      value_template: "{{ value_json.themes.top }}",
+    },
+    "homeassistant/sensor/mapcomplete/totalQuestions/config": {
+      name: "MapComplete Questions Answered Today",
+      unit_of_measurement: "questions",
+      state_topic: "mapcomplete/statistics/questions",
+      icon: "mdi:comment-question",
+      unique_id: "mapcomplete_questions_total",
+    },
+    "homeassistant/sensor/mapcomplete/totalImages/config": {
+      name: "MapComplete Images Added Today",
+      unit_of_measurement: "images",
+      state_topic: "mapcomplete/statistics/images",
+      icon: "mdi:image",
+      unique_id: "mapcomplete_images_total",
+    },
+    "homeassistant/sensor/mapcomplete/totalPoints/config": {
+      name: "MapComplete Points Added Today",
+      unit_of_measurement: "points",
+      state_topic: "mapcomplete/statistics/points",
+      icon: "mdi:map-marker",
+      unique_id: "mapcomplete_points_total",
+    },
+  };
+
+  // Publish the configuration for each sensor
+  logger.info("Publishing sensor configuration to MQTT");
+  for (const [topic, payload] of Object.entries(sensors)) {
+    if (!dry_run) {
+      await client.publish(topic, JSON.stringify(payload), {
+        retain: true,
+      });
+    } else {
+      logger.info(
+        "Dry run, not publishing sensor configuration to MQTT",
+        topic,
+        payload
+      );
+    }
   }
 }
 

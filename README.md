@@ -38,6 +38,26 @@ Data is published to the topic `mapcomplete/statistics` on the MQTT broker, with
 
 Most items are also available on their own topic, e.g. `mapcomplete/statistics/changesets/total` or `mapcomplete/statistics/users/top`.
 
+Apart from this, some data is also published as a Home Assistant sensor (see [list](#home-assistant-sensors) below).
+
+### Home Assistant sensors
+
+| Sensor ID                           | Description                                      |
+| ----------------------------------- | ------------------------------------------------ |
+| `mapcomplete_changesets_total`      | The total number of changesets                   |
+| `mapcomplete_changesets_last`       | The ID of the last changeset                     |
+| `mapcomplete_changesets_last_color` | The color of the last changeset, as a hex string |
+| `mapcomplete_changesets_last_rgb`   | The color of the last changeset, as an RGB array |
+| `mapcomplete_users_total`           | The total number of users                        |
+| `mapcomplete_users_last`            | The username of the last user                    |
+| `mapcomplete_users_top`             | The username of the top user                     |
+| `mapcomplete_themes_total`          | The total number of themes                       |
+| `mapcomplete_themes_last`           | The name of the last theme                       |
+| `mapcomplete_themes_top`            | The names of the top themes                      |
+| `mapcomplete_questions_total`       | The total number of questions answered           |
+| `mapcomplete_images_total`          | The total number of images uploaded              |
+| `mapcomplete_points_total`          | The total number of points earned                |
+
 ### Example data
 
 ```json
