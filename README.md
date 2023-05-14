@@ -8,14 +8,15 @@ For running the service, there needs to be an MQTT broker running and some envir
 
 Below is a summary of the environment variables:
 
-| Variable        | Description                                               | Default     |
-| --------------- | --------------------------------------------------------- | ----------- |
-| `MQTT_HOST`     | The host of the MQTT broker                               | `localhost` |
-| `MQTT_PORT`     | The port of the MQTT broker                               | `1883`      |
-| `MQTT_USERNAME` | The username for the MQTT broker                          | empty       |
-| `MQTT_PASSWORD` | The password for the MQTT broker                          | empty       |
-| `OSMCHA_TOKEN`  | The token for OSMCha (required)                           | empty       |
-| `DRY_RUN`       | If set to `True`, no data is published to the MQTT broker | `False`     |
+| Variable          | Description                                               | Default     |
+| ----------------- | --------------------------------------------------------- | ----------- |
+| `MQTT_HOST`       | The host of the MQTT broker                               | `localhost` |
+| `MQTT_PORT`       | The port of the MQTT broker                               | `1883`      |
+| `MQTT_USERNAME`   | The username for the MQTT broker                          | empty       |
+| `MQTT_PASSWORD`   | The password for the MQTT broker                          | empty       |
+| `OSMCHA_TOKEN`    | The token for OSMCha (required)                           | empty       |
+| `DRY_RUN`         | If set to `True`, no data is published to the MQTT broker | `False`     |
+| `UPDATE_INTERVAL` | The interval in seconds between updates                   | `300`       |
 
 These can be set in an `.env` file (see `.env.example`) or by setting the environment variables yourself.
 The necessary OSMCha token can be obtained by logging in to [OSMCha](https://osmcha.org) and copying the token from the Account Settings page.
@@ -65,6 +66,7 @@ Apart from this, some data is also published as a Home Assistant sensor (see [li
   "changesets": {
     "total": 3,
     "last": 1234,
+    "lastUrl": "https://www.osm.org/changeset/1234",
     "lastColor": "#fffe73",
     "lastColorRgb": [255, 254, 115],
     "colors": ["#70c549", "#e2783d", "#fffe73"],

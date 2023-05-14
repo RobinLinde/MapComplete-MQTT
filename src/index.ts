@@ -15,6 +15,9 @@ const mqtt_port = process.env.MQTT_PORT
 const mqtt_username = process.env.MQTT_USERNAME || "";
 const mqtt_password = process.env.MQTT_PASSWORD || "";
 const dry_run = process.env.DRY_RUN === "True" || false;
+const update_interval = process.env.UPDATE_INTERVAL
+  ? parseInt(process.env.UPDATE_INTERVAL)
+  : 5 * 60;
 
 // Create a logger
 const logger = createLogger({
@@ -90,8 +93,8 @@ async function main() {
   await publishConfig(client);
 
   if (!dry_run) {
-    // Create a loop to send a message every 5 minutes
-    setInterval(async () => update(client), 1000 * 60 * 5);
+    // Create a loop to send a message for every update_interval
+    setInterval(async () => update(client), 1000 * update_interval);
   } else {
     logger.info("Dry run, not creating interval, exiting");
     // Wait 5 seconds before exiting
@@ -338,6 +341,7 @@ async function update(client: AsyncMqttClient | FakeClient) {
       changesets: {
         total,
         last: lastId,
+        lastUrl: `https://osm.org/changeset/${lastId}`,
         lastColor,
         lastColorRgb,
         colors,
@@ -463,6 +467,7 @@ async function publishConfig(client: AsyncMqttClient | FakeClient) {
       state_topic: "mapcomplete/statistics/changesets/total",
       icon: "mdi:map-marker",
       unique_id: "mapcomplete_changesets_total",
+      json_attributes_topic: "mapcomplete/statistics/changesets",
     },
     "homeassistant/sensor/mapcomplete/lastChangeset/config": {
       name: "MapComplete Last Changeset",
@@ -493,6 +498,7 @@ async function publishConfig(client: AsyncMqttClient | FakeClient) {
       state_topic: "mapcomplete/statistics/users/total",
       icon: "mdi:account",
       unique_id: "mapcomplete_users_total",
+      json_attributes_topic: "mapcomplete/statistics/users/users",
     },
     "homeassistant/sensor/mapcomplete/lastUser/config": {
       name: "MapComplete Last User",
@@ -514,6 +520,7 @@ async function publishConfig(client: AsyncMqttClient | FakeClient) {
       state_topic: "mapcomplete/statistics/themes/total",
       icon: "mdi:palette",
       unique_id: "mapcomplete_themes_total",
+      json_attributes_topic: "mapcomplete/statistics/themes/themes",
     },
     "homeassistant/sensor/mapcomplete/lastTheme/config": {
       name: "MapComplete Last Theme",
