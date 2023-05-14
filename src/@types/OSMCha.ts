@@ -1,3 +1,8 @@
+/**
+ * Types for OSMCha API
+ *
+ * Contains types for a response from the changesets endpoint of the OSMCha API
+ */
 import { FeatureCollection, Feature } from "geojson";
 
 /**

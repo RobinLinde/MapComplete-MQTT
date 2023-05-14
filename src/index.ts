@@ -1,8 +1,10 @@
 import * as dotenv from "dotenv";
 import { AsyncMqttClient, connectAsync } from "async-mqtt";
-import type { APIResponse, Changeset } from "./@types/osmcha";
+import type { APIResponse, Changeset } from "./@types/OSMCha";
 import { createLogger, transports, format } from "winston";
 import FakeClient from "./FakeClient";
+import { Theme } from "./@types/MapComplete";
+import { getAverageColor } from "fast-average-color-node";
 
 // Standard variables
 dotenv.config();
@@ -238,17 +240,28 @@ async function update(client: AsyncMqttClient | FakeClient) {
     );
 
     // Make a list of colors for each changeset
-    const colors = mapCompleteChangesets.map((c) => {
-      // Get the theme from the changeset
-      const theme = c.properties.metadata["theme"];
-      // Check if the theme is in the lookup table
-      if (themeColors[theme] !== undefined) {
-        // Return the color from the lookup table
-        return themeColors[theme];
+    // const colorPromises = mapCompleteChangesets.map(async (c) => {
+    //   // Get the color for the changeset0
+    //   return getThemeColor(c);
+    // });
+
+    const colors: string[] = [];
+
+    // Loop through the changesets
+    for (const changeset of mapCompleteChangesets) {
+      // Get the color for the changeset
+      try {
+        const color = await getThemeColor(changeset);
+        // Add the color to the array
+        colors.push(color);
+      } catch (e) {
+        logger.error(e);
+        continue;
       }
-      // Return the default color
-      return themeColors.default;
-    });
+    }
+
+    // Wait for all colors to be fetched
+    // const colors = await Promise.all(colorPromises);
 
     // Total number of answered questions of all changesets
     const questions = mapCompleteChangesets.reduce((acc, cur) => {
@@ -552,6 +565,92 @@ async function publishConfig(client: AsyncMqttClient | FakeClient) {
         topic,
         payload
       );
+    }
+  }
+}
+
+async function getThemeColor(changeset: Changeset): Promise<string> {
+  const theme = changeset.properties.metadata["theme"];
+  const host = changeset.properties.metadata["host"];
+
+  // First check if we already have a color for this theme
+  if (themeColors[theme]) {
+    // We already have a color for this theme, return it
+    return themeColors[theme];
+  } else {
+    // We'll need to download the theme file, find the image and extract the color
+    let url;
+    let baseUrl;
+
+    if (host.startsWith("https://mapcomplete.osm.be/")) {
+      baseUrl =
+        "https://raw.githubusercontent.com/pietervdvn/MapComplete/master";
+      url = `${baseUrl}/assets/themes/${theme}/${theme}.json`;
+    } else if (host.startsWith("https://pietervdvn.github.io/mc/")) {
+      // We'll need to parse the branch from the url
+      // Example: https://pietervdvn.github.io/mc/feature/maplibre/index.html
+      // Result: feature/maplibre
+
+      const parts = host.split("/").slice(4, -1);
+      const branch = parts.join("/");
+
+      baseUrl = `https://raw.githubusercontent.com/pietervdvn/MapComplete/${branch}`;
+      url = `${baseUrl}/assets/themes/${theme}/${theme}.json`;
+    } else {
+      // Return a default color
+      logger.info(
+        `No theme color found for ${theme} on ${host}, returning default`
+      );
+      return themeColors["default"];
+    }
+
+    // Override the url if the theme is a full url
+    if (theme.startsWith("https://")) {
+      // Unofficial theme, we'll need to download it from the url
+      url = theme;
+    }
+
+    // logger.info(`Downloading theme file from ${url}`);
+    const themeFile = await fetch(url);
+    const themeJson: Theme = await themeFile.json();
+
+    // Find the image
+    let image = themeJson.icon;
+    // If the image URL is relative, prepend the host from the url
+    if (image.startsWith(".")) {
+      image = `${baseUrl}/${image.slice(2)}`;
+    }
+
+    logger.info(`Downloading theme image for ${theme} from ${image}`);
+
+    try {
+      // Download the image
+      const imageFile = await fetch(image);
+      // Convert the image to an array buffer
+      const imageArrayBuffer = await imageFile.arrayBuffer();
+      // Convert array buffer to a buffer
+      const imageBuffer = Buffer.from(imageArrayBuffer);
+
+      const dominantColor = await getAverageColor(imageBuffer);
+
+      // Convert the color to a hex string
+      let color = dominantColor.hex;
+
+      // If it is dark, use the default color
+      if (dominantColor.isDark) {
+        color = themeColors["default"];
+      }
+
+      // Save the color for future use
+      themeColors[theme] = color;
+
+      return color;
+    } catch (e) {
+      logger.error(
+        `Failed to get color for ${theme} from ${image}, using default`,
+        e
+      );
+      return themeColors["default"];
     }
   }
 }
