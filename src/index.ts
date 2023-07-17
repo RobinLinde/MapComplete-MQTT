@@ -580,6 +580,8 @@ async function getThemeColor(changeset: Changeset): Promise<string> {
   const theme = changeset.properties.metadata["theme"];
   const host = changeset.properties.metadata["host"];
 
+  logger.info(`Getting color for theme ${theme} on host ${host}`);
+
   // First check if we already have a color for this theme
   if (themeColors[theme]) {
     // We already have a color for this theme, return it
@@ -589,21 +591,52 @@ async function getThemeColor(changeset: Changeset): Promise<string> {
     let url;
     let baseUrl;
 
-    if (host.startsWith("https://mapcomplete.osm.be/")) {
-      baseUrl =
-        "https://raw.githubusercontent.com/pietervdvn/MapComplete/master";
-      url = `${baseUrl}/assets/themes/${theme}/${theme}.json`;
-    } else if (host.startsWith("https://pietervdvn.github.io/mc/")) {
-      // We'll need to parse the branch from the url
-      // Example: https://pietervdvn.github.io/mc/feature/maplibre/index.html
-      // Result: feature/maplibre
+    // We'll use a lookup table with regular expressions to find the correct url
+    const urlPatterns = {
+      "mapcomplete.osm.be": {
+        regex: /https:\/\/mapcomplete.osm.be\/(.)*/g,
+        repo: "pietervdvn/MapComplete",
+        branch: "master",
+      },
+      "pietervdvn.github.io/mc": {
+        regex:
+          /https:\/\/pietervdvn.github.io\/mc\/(?<branch>[A-z_\-/]*)\/([A-z_]+\.html)/g,
+        repo: "pietervdvn/MapComplete",
+      },
+      "mapcomplete.vercel.app": {
+        regex: /https:\/\/mapcomplete.vercel.app\/(.)*/g,
+        repo: "RobinLinde/MapComplete",
+        branch: "master",
+      },
+    };
+    const regexes = Object.values(urlPatterns).map((pattern) => pattern.regex);
+    const names = Object.keys(urlPatterns);
 
-      const parts = host.split("/").slice(4, -1);
-      const branch = parts.join("/");
+    // Find the correct url
+    for (const regex of regexes) {
+      logger.info(
+        `Checking regex ${names[regexes.indexOf(regex)]} for ${host}`
+      );
+      const match = regex.exec(host);
+      if (match) {
+        // We found a match, get the repo and branch
+        const repo = urlPatterns[names[regexes.indexOf(regex)]].repo;
+        // Check if the match has a branch
+        const branch =
+          match.groups?.branch ||
+          urlPatterns[names[regexes.indexOf(regex)]].branch ||
+          "main";
 
-      baseUrl = `https://raw.githubusercontent.com/pietervdvn/MapComplete/${branch}`;
-      url = `${baseUrl}/assets/themes/${theme}/${theme}.json`;
-    } else {
+        // Construct the url
+        baseUrl = `https://raw.githubusercontent.com/${repo}/${branch}`;
+        url = `${baseUrl}/assets/themes/${theme}/${theme}.json`;
+
+        logger.info(`Found theme ${theme} on ${host}, using ${url}`);
+
+        break;
+      }
+    }
+    if (!url) {
       // Return a default color
       logger.info(
         `No theme color found for ${theme} on ${host}, returning default`
@@ -617,7 +650,7 @@ async function getThemeColor(changeset: Changeset): Promise<string> {
       url = theme;
     }
 
-    // logger.info(`Downloading theme file from ${url}`);
+    logger.info(`Downloading theme file from ${url}`);
     const themeFile = await fetch(url);
     const themeJson: Theme = await themeFile.json();
 
@@ -650,6 +683,8 @@ async function getThemeColor(changeset: Changeset): Promise<string> {
 
       // Save the color for future use
       themeColors[theme] = color;
+
+      logger.info(`Found color ${color} for theme ${theme}`);
 
       return color;
     } catch (e) {
