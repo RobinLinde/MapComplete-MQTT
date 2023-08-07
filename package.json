@@ -16,7 +16,7 @@
   "license": "ISC",
   "dependencies": {
     "@types/geojson": "^7946.0.10",
-    "@types/node": "^20.4.1",
+    "@types/node": "^20.4.8",
     "async-mqtt": "^2.6.3",
     "dotenv": "^16.3.1",
     "fast-average-color-node": "^2.6.0",
