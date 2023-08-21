@@ -57,7 +57,7 @@ Apart from this, some data is also published as a Home Assistant sensor (see [li
 | `mapcomplete_themes_top`            | The names of the top themes                      |
 | `mapcomplete_questions_total`       | The total number of questions answered           |
 | `mapcomplete_images_total`          | The total number of images uploaded              |
-| `mapcomplete_points_total`          | The total number of points earned                |
+| `mapcomplete_points_total`          | The total number of points added                 |
 
 ### Example data
 
