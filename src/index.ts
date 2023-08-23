@@ -589,7 +589,10 @@ async function getThemeColor(changeset: Changeset): Promise<string> {
     let url;
     let baseUrl;
 
-    if (host.startsWith("https://mapcomplete.osm.be/")) {
+    if (
+      host.startsWith("https://mapcomplete.osm.be/") ||
+      host.startsWith("https://mapcomplete.org/")
+    ) {
       baseUrl =
         "https://raw.githubusercontent.com/pietervdvn/MapComplete/master";
       url = `${baseUrl}/assets/themes/${theme}/${theme}.json`;
