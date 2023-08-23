@@ -76,7 +76,34 @@ Apart from this, some data is also published as a Home Assistant sensor (see [li
       [226, 120, 61],
       [255, 254, 115]
     ],
-    "colorsRgbStr": "112,197,73,226,120,61,255,254,115"
+    "colorsRgbStr": "112,197,73,226,120,61,255,254,115",
+    "changesets": [
+      {
+        "id": 1231,
+        "user": "user1",
+        "theme": "etymology",
+        "color": "#70c549",
+        "colorRgb": [112, 197, 73],
+
+        "url": "https://www.osm.org/changeset/1232"
+      },
+      {
+        "id": 1233,
+        "user": "user2",
+        "color": "#e2783d",
+        "colorRgb": [226, 120, 61],
+        "theme": "cyclofix",
+        "url": "https://www.osm.org/changeset/1233"
+      },
+      {
+        "id": 1234,
+        "user": "user2",
+        "color": "#fffe73",
+        "colorRgb": [255, 254, 115],
+        "theme": "advertising",
+        "url": "https://www.osm.org/changeset/1234"
+      }
+    ]
   },
   "users": {
     "total": 3,

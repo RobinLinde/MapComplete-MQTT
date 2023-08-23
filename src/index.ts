@@ -348,6 +348,14 @@ async function update(client: AsyncMqttClient | FakeClient) {
         colorsStr: colors.join(","),
         colorsRgb: colors.map((c) => hexToRgb(c)),
         colorsRgbStr: colors.map((c) => hexToRgb(c)).join(","),
+        changesets: mapCompleteChangesets.map((c) => ({
+          id: c.id,
+          user: c.properties.user,
+          theme: c.properties.metadata["theme"],
+          color: colors[mapCompleteChangesets.indexOf(c)],
+          colorRgb: hexToRgb(colors[mapCompleteChangesets.indexOf(c)]),
+          url: `https://osm.org/changeset/${c.id}`,
+        })),
       },
       users: {
         total: userCount,
