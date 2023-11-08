@@ -15,7 +15,7 @@
   "author": "Robin van der Linde",
   "license": "ISC",
   "dependencies": {
-    "@types/geojson": "^7946.0.11",
+    "@types/geojson": "^7946.0.13",
     "@types/node": "^20.8.10",
     "async-mqtt": "^2.6.3",
     "dotenv": "^16.3.1",
