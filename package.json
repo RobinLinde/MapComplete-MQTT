@@ -22,7 +22,7 @@
     "fast-average-color-node": "^2.7.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3",
-    "winston": "^3.11.0"
+    "winston": "^3.12.0"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^6.19.1",
