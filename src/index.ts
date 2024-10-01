@@ -16,7 +16,7 @@ const dry_run = process.env.DRY_RUN === "True" || false
 const update_interval = process.env.UPDATE_INTERVAL ? parseInt(process.env.UPDATE_INTERVAL) : 5 * 60
 
 // Import version from package.json
-const packageJson = require("../package.json")
+import packageJson from "../package.json"
 const version = packageJson.version
 
 // Create a logger
@@ -61,7 +61,7 @@ const themeColors = {
 // Variables for storing the changesets
 let lastUpdateTime = new Date().setHours(0, 0, 0, 0)
 let mapCompleteChangesets: Changeset[] = []
-let mapCompleteThemes: ExtendedTheme[] = []
+const mapCompleteThemes: ExtendedTheme[] = []
 
 /**
  * Create a device that will be used for all sensors
@@ -709,6 +709,7 @@ async function getThemeDetails(changeset: Changeset): Promise<{
  * @param title Title object or string
  * @returns String containing the title
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function determineTitle(title: any): string {
   // Check if the title is an object
   if (typeof title === "object") {
