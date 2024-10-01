@@ -234,11 +234,6 @@ async function update(client: AsyncMqttClient | FakeClient) {
     themes = Object.fromEntries(Object.entries(themes).sort(([, a], [, b]) => b - a))
 
     // Make a list of colors for each changeset
-    // const colorPromises = mapCompleteChangesets.map(async (c) => {
-    //   // Get the color for the changeset0
-    //   return getThemeColor(c);
-    // });
-
     const colors: string[] = []
 
     // Loop through the changesets
@@ -253,9 +248,6 @@ async function update(client: AsyncMqttClient | FakeClient) {
         continue
       }
     }
-
-    // Wait for all colors to be fetched
-    // const colors = await Promise.all(colorPromises);
 
     // Total number of answered questions of all changesets
     const questions = mapCompleteChangesets.reduce((acc, cur) => {
