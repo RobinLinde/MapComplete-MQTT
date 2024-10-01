@@ -39,7 +39,7 @@ Data is published to the topic `mapcomplete/statistics` on the MQTT broker, with
 
 Most items are also available on their own topic, e.g. `mapcomplete/statistics/changesets/total` or `mapcomplete/statistics/users/top`.
 
-Apart from this, some data is also published as a Home Assistant sensor (see [list](#home-assistant-sensors) below).
+Apart from this, some data is also published as a Home Assistant sensors, contained by a Home Assistant device (see [list](#home-assistant-sensors) below).
 
 ### Home Assistant sensors
 
