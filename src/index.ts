@@ -3,7 +3,7 @@ import { AsyncMqttClient, connectAsync } from "async-mqtt"
 import type { APIResponse, Changeset } from "./@types/OSMCha"
 import { createLogger, transports, format } from "winston"
 import FakeClient from "./FakeClient"
-import { Theme } from "./@types/MapComplete"
+import { ExtendedTheme, Theme } from "./@types/MapComplete"
 import { getAverageColor } from "fast-average-color-node"
 
 // Standard variables
@@ -61,6 +61,18 @@ const themeColors = {
 // Variables for storing the changesets
 let lastUpdateTime = new Date().setHours(0, 0, 0, 0)
 let mapCompleteChangesets: Changeset[] = []
+let mapCompleteThemes: ExtendedTheme[] = []
+
+/**
+ * Create a device that will be used for all sensors
+ */
+const device = {
+  name: "MapComplete",
+  identifiers: ["mapcomplete"],
+  sw_version: version,
+  model: "MapComplete Statistics",
+  manufacturer: "MapComplete MQTT",
+}
 
 // Check if the OSMCha token is set
 if (process.env.OSMCHA_TOKEN === undefined) {
@@ -162,7 +174,7 @@ async function update(client: AsyncMqttClient | FakeClient) {
   try {
     // Get the changesets from OSMCha
     const response = await fetch(
-      `https://osmcha.org/api/v1/changesets/?date__gte=${encodeURIComponent(
+      `https://osmcha.org/api/v1/changesets/?page_size=100&date__gte=${encodeURIComponent(
         dateStr
       )}&editor=MapComplete`,
       {
@@ -238,13 +250,24 @@ async function update(client: AsyncMqttClient | FakeClient) {
 
     // Loop through the changesets
     for (const changeset of mapCompleteChangesets) {
-      // Get the color for the changeset
+      // Get the details for the changeset
       try {
-        const color = await getThemeColor(changeset)
+        const themeDetails = await getThemeDetails(changeset)
         // Add the color to the array
-        colors.push(color)
+        colors.push(themeDetails.color)
+        // Add the theme to the list of themes, if it is not already there
+        if (!mapCompleteThemes.find((t) => t.id === changeset.properties.metadata["theme"])) {
+          mapCompleteThemes.push({
+            id: changeset.properties.metadata["theme"],
+            title: themeDetails.name,
+            icon: themeDetails.icon,
+            published: false,
+            color: themeDetails.color,
+          })
+        }
       } catch (e) {
-        logger.error(e)
+        // console.error(e, "Error while getting theme details", changeset)
+        logger.error(e, "Error while getting theme details")
         continue
       }
     }
@@ -414,9 +437,15 @@ async function update(client: AsyncMqttClient | FakeClient) {
           })
         }
       }
+
+      // Publish the theme data
+      await publishThemeData(client, themes)
     } else {
       logger.info("Dry run, not publishing statistics to MQTT", statistics)
     }
+
+    // Publish the theme sensors
+    await publishThemeConfig(client)
 
     // Update the lastChangesetTime
     lastUpdateTime = new Date().getTime()
@@ -431,17 +460,6 @@ async function update(client: AsyncMqttClient | FakeClient) {
  * @param client MQTT client
  */
 async function publishConfig(client: AsyncMqttClient | FakeClient) {
-  /**
-   * Create a device that contains all sensors
-   */
-  const device = {
-    name: "MapComplete",
-    identifiers: ["mapcomplete"],
-    sw_version: version,
-    model: "MapComplete Statistics",
-    manufacturer: "MapComplete MQTT",
-  }
-
   /**
    * Mapping of all payloads for each sensor to their respective topics
    */
@@ -570,14 +588,29 @@ async function publishConfig(client: AsyncMqttClient | FakeClient) {
   }
 }
 
-async function getThemeColor(changeset: Changeset): Promise<string> {
+/**
+ * This function gets the theme color and some other information from the theme used in a changeset
+ *
+ * @param changeset Changeset to get information from
+ * @returns
+ */
+async function getThemeDetails(changeset: Changeset): Promise<{
+  color: string
+  icon: string
+  name: string
+}> {
   const theme = changeset.properties.metadata["theme"]
   const host = changeset.properties.metadata["host"]
 
-  // First check if we already have a color for this theme
-  if (themeColors[theme]) {
-    // We already have a color for this theme, return it
-    return themeColors[theme]
+  // First check if we already have details for this theme
+  if (mapCompleteThemes.find((t) => t.id === theme)) {
+    // We already have all details for this theme, return it
+    const themeDetails = mapCompleteThemes.find((t) => t.id === theme)
+    return {
+      color: themeDetails.color,
+      icon: themeDetails.icon,
+      name: themeDetails.title,
+    }
   } else {
     // We'll need to download the theme file, find the image and extract the color
     let url
@@ -601,8 +634,12 @@ async function getThemeColor(changeset: Changeset): Promise<string> {
       url = `${baseUrl}/assets/themes/${theme}/${theme}.json`
     } else {
       // Return a default color
-      logger.info(`No theme color found for ${theme} on ${host}, returning default`)
-      return themeColors["default"]
+      logger.info(`No theme file found for ${theme} on ${host}, returning default information`)
+      return {
+        color: themeColors["default"],
+        icon: "https://raw.githubusercontent.com/pietervdvn/MapComplete/refs/heads/develop/assets/svg/add.svg",
+        name: theme,
+      }
     }
 
     // Override the url if the theme is a full url
@@ -615,40 +652,255 @@ async function getThemeColor(changeset: Changeset): Promise<string> {
     const themeFile = await fetch(url)
     const themeJson: Theme = await themeFile.json()
 
-    // Find the image
+    let color: string
+
+    // Determine image URL
     let image = themeJson.icon
+
     // If the image URL is relative, prepend the host from the url
     if (image.startsWith(".")) {
       image = `${baseUrl}/${image.slice(2)}`
     }
 
-    logger.info(`Downloading theme image for ${theme} from ${image}`)
+    // Check if we already have a predefined color for this theme
+    if (themeColors[theme]) {
+      color = themeColors[theme]
+    } else {
+      // We need to analyze the image to get the color
 
-    try {
-      // Download the image
-      const imageFile = await fetch(image)
-      // Convert the image to an array buffer
-      const imageArrayBuffer = await imageFile.arrayBuffer()
-      // Convert array buffer to a buffer
-      const imageBuffer = Buffer.from(imageArrayBuffer)
+      logger.info(`Downloading theme image for ${theme} from ${image}`)
+      try {
+        // Download the image
+        const imageFile = await fetch(image)
+        // Convert the image to an array buffer
+        const imageArrayBuffer = await imageFile.arrayBuffer()
+        // Convert array buffer to a buffer
+        const imageBuffer = Buffer.from(imageArrayBuffer)
 
-      const dominantColor = await getAverageColor(imageBuffer)
+        const dominantColor = await getAverageColor(imageBuffer)
 
-      // Convert the color to a hex string
-      let color = dominantColor.hex
+        // Convert the color to a hex string
+        color = dominantColor.hex
 
-      // If it is dark, use the default color
-      if (dominantColor.isDark) {
+        // If it is dark, use the default color
+        if (dominantColor.isDark) {
+          color = themeColors["default"]
+        }
+      } catch (e) {
+        logger.error(`Failed to get color for ${theme} from ${image}, using default`, e)
         color = themeColors["default"]
       }
 
-      // Save the color for future use
-      themeColors[theme] = color
+      logger.debug("Theme details", theme, color, image, determineTitle(themeJson.title))
+    }
 
-      return color
-    } catch (e) {
-      logger.error(`Failed to get color for ${theme} from ${image}, using default`, e)
-      return themeColors["default"]
+    // Return the details
+    return {
+      color,
+      icon: image,
+      name: determineTitle(themeJson.title),
+    }
+  }
+}
+
+/**
+ * Small helper function to determine the title of a theme
+ *
+ * @param title Title object or string
+ * @returns String containing the title
+ */
+function determineTitle(title: any): string {
+  // Check if the title is an object
+  if (typeof title === "object") {
+    // Check if the object has an en key
+    if (title.en) {
+      // Return the en key
+      return title.en
+    } else {
+      // Return the first key
+      return title[Object.keys(title)[0]]
+    }
+  } else {
+    // Return the title as is
+    return title
+  }
+}
+
+/**
+ * Function that publishes sensors for all not yet published themes
+ *
+ * @param client MQTT client or FakeClient
+ */
+async function publishThemeConfig(client: AsyncMqttClient | FakeClient) {
+  // Loop through the themes
+  for (const theme of mapCompleteThemes) {
+    // Check if we have already published the theme
+    if (!theme.published) {
+      // We need to create some sensors for this theme
+      const changesetsSensor = {
+        name: "Changesets Today",
+        state_topic: `mapcomplete/statistics/theme/${theme.id}`,
+        entity_picture: theme.icon,
+        unit_of_measurement: "changesets",
+        unique_id: `mapcomplete_theme_${theme.id}_changesets`,
+        device: {
+          name: theme.title,
+          identifiers: [`mapcomplete_theme_${theme.id}`],
+          sw_version: version,
+          model: "MapComplete Statistics",
+          manufacturer: "MapComplete MQTT",
+        },
+      }
+      const iconImage = {
+        name: "Icon",
+        url_topic: `mapcomplete/statistics/theme/${theme.id}/icon`,
+        entity_picture: theme.icon,
+        unique_id: `mapcomplete_theme_${theme.id}_icon`,
+        device: {
+          name: theme.title,
+          identifiers: [`mapcomplete_theme_${theme.id}`],
+          sw_version: version,
+          model: "MapComplete Statistics",
+          manufacturer: "MapComplete MQTT",
+        },
+      }
+      const usersSensor = {
+        name: "Users Today",
+        state_topic: `mapcomplete/statistics/theme/${theme.id}/totalUsers`,
+        json_attributes_topic: `mapcomplete/statistics/theme/${theme.id}/users`,
+        unique_id: `mapcomplete_theme_${theme.id}_users`,
+        device: {
+          name: theme.title,
+          identifiers: [`mapcomplete_theme_${theme.id}`],
+          sw_version: version,
+          model: "MapComplete Statistics",
+          manufacturer: "MapComplete MQTT",
+        },
+      }
+      const topUserSensor = {
+        name: "Top User",
+        state_topic: `mapcomplete/statistics/theme/${theme.id}/topUser`,
+        unique_id: `mapcomplete_theme_${theme.id}_top_user`,
+        device: {
+          name: theme.title,
+          identifiers: [`mapcomplete_theme_${theme.id}`],
+          sw_version: version,
+          model: "MapComplete Statistics",
+          manufacturer: "MapComplete MQTT",
+        },
+      }
+
+      if (!dry_run) {
+        // Publish the sensor configuration
+        logger.info(`Publishing sensor configuration for ${theme.title}`)
+        await client.publish(
+          `homeassistant/sensor/mapcomplete/theme_${theme.id}_changesets/config`,
+          JSON.stringify(changesetsSensor),
+          {
+            retain: true,
+          }
+        )
+
+        await client.publish(
+          `homeassistant/image/mapcomplete/theme_${theme.id}_icon/config`,
+          JSON.stringify(iconImage),
+          {
+            retain: true,
+          }
+        )
+
+        await client.publish(
+          `homeassistant/sensor/mapcomplete/theme_${theme.id}_users/config`,
+          JSON.stringify(usersSensor),
+          {
+            retain: true,
+          }
+        )
+
+        await client.publish(
+          `homeassistant/sensor/mapcomplete/theme_${theme.id}_top_user/config`,
+          JSON.stringify(topUserSensor),
+          {
+            retain: true,
+          }
+        )
+
+        // Mark the theme as published
+        theme.published = true
+      } else logger.info("Dry run, not publishing sensor configuration for theme", theme.title)
+    }
+  }
+}
+
+/**
+ * Function to publish data for individual theme sensors
+ *
+ * @param client MQTT client or FakeClient
+ */
+async function publishThemeData(
+  client: AsyncMqttClient | FakeClient,
+  themes: Record<string, number>
+) {
+  // Loop through the themes
+  for (const [theme, count] of Object.entries(themes)) {
+    // Publish the data for the theme sensor
+    if (!dry_run) {
+      await client.publish(`mapcomplete/statistics/theme/${theme}`, count.toString(), {
+        retain: true,
+      })
+
+      // Also publish the icon for the theme
+      const themeDetails = mapCompleteThemes.find((t) => t.id === theme)
+      if (themeDetails) {
+        await client.publish(`mapcomplete/statistics/theme/${theme}/icon`, themeDetails.icon, {
+          retain: true,
+        })
+      }
+
+      // Publish amount of users for this theme
+      const users = mapCompleteChangesets.reduce((acc, cur) => {
+        // Get the theme from the changeset
+        const themeId = cur.properties.metadata["theme"]
+        // If the theme is not the one we're looking for, skip
+        if (themeId !== theme) {
+          return acc
+        }
+        // Get the user from the changeset
+        const user = cur.properties.user
+        // If the user is not in the object, add it
+        if (acc[user] === undefined) {
+          acc[user] = 0
+        }
+        // Increase the count for the user
+        acc[user]++
+        return acc
+      }, {} as Record<string, number>)
+      // Sort the users by the number of changesets
+      const sortedUsers = Object.fromEntries(Object.entries(users).sort(([, a], [, b]) => b - a))
+
+      await client.publish(
+        `mapcomplete/statistics/theme/${theme}/users`,
+        JSON.stringify(sortedUsers),
+        {
+          retain: true,
+        }
+      )
+
+      // Publish total users for this theme
+      await client.publish(
+        `mapcomplete/statistics/theme/${theme}/totalUsers`,
+        Object.keys(users).length.toString(),
+        {
+          retain: true,
+        }
+      )
+
+      // Publish top user for this theme
+      await client.publish(`mapcomplete/statistics/theme/${theme}/topUser`, findTop(users), {
+        retain: true,
+      })
+    } else {
+      logger.info("Dry run, not publishing theme data to MQTT", theme, count)
     }
   }
 }
