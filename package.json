@@ -15,18 +15,21 @@
   "author": "Robin van der Linde",
   "license": "ISC",
   "dependencies": {
-    "@types/geojson": "^7946.0.13",
-    "@types/node": "^20.10.4",
+    "@types/geojson": "^7946.0.14",
+    "@types/node": "^22.7.4",
     "async-mqtt": "^2.6.3",
-    "dotenv": "^16.3.1",
-    "fast-average-color-node": "^2.7.0",
+    "dotenv": "^16.4.5",
+    "fast-average-color-node": "^3.1.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3",
-    "winston": "^3.11.0"
+    "typescript": "^5.6.2",
+    "winston": "^3.14.2"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^6.19.1",
-    "@typescript-eslint/parser": "^6.19.1",
-    "eslint": "^8.55.0"
+    "@eslint/js": "^9.11.1",
+    "@types/eslint__js": "^8.42.3",
+    "@typescript-eslint/eslint-plugin": "^8.8.0",
+    "@typescript-eslint/parser": "^8.8.0",
+    "eslint": "^9.11.1",
+    "typescript-eslint": "^8.8.0"
   }
 }
