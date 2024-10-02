@@ -5,7 +5,6 @@ import { createLogger, transports, format } from "winston"
 import FakeClient from "./FakeClient"
 import { ExtendedTheme } from "./@types/MapComplete"
 import { HomeAssistant } from "./HomeAssistant"
-import { Helpers } from "./Helpers"
 import { OsmCha } from "./OsmCha"
 import { MapComplete, Statistics } from "./MapComplete"
 
@@ -49,7 +48,6 @@ const mapCompleteThemes: ExtendedTheme[] = []
 
 // Preparation for some helpers
 let homeAssistant: HomeAssistant
-const helpers = new Helpers()
 const osmCha = new OsmCha(process.env.OSMCHA_TOKEN, logger)
 const mapComplete = new MapComplete(mapCompleteThemes, logger)
 
@@ -98,6 +96,7 @@ async function main() {
  * @param client The MQTT client to publish the data to
  */
 async function update(client: AsyncMqttClient | FakeClient) {
+  let newDay = false
   logger.info("Performing update")
   // Check if the last update time is still today
   if (new Date(lastUpdateTime).getDate() !== new Date().getDate()) {
@@ -106,6 +105,9 @@ async function update(client: AsyncMqttClient | FakeClient) {
     mapCompleteChangesets = []
     // Reset the lastUpdateTime
     lastUpdateTime = new Date().setHours(0, 0, 0, 0)
+
+    // Set newDay to true, so we can clean up sensors we have no data for yet/any more
+    newDay = true
   }
 
   // Get date in YYYY-MM-DD HH:MM:SS format, minus 10 minutes to account for delays, unless this means we go back to yesterday
@@ -175,6 +177,11 @@ async function update(client: AsyncMqttClient | FakeClient) {
   } catch (error) {
     logger.error("Error while updating statistics", error)
   }
+
+  // Clean up sensors for themes we don't have data for yet/any more
+  if (newDay) {
+    await homeAssistant.cleanUpSensors(mapCompleteThemes, mapCompleteChangesets)
+  }
 }
 
 /**
@@ -229,11 +236,54 @@ async function publishThemeData(
   themes: Record<string, number>
 ) {
   // Loop through the themes
-  for (const [theme, count] of Object.entries(themes)) {
-    // Publish the data for the theme sensor
-    await client.publish(`mapcomplete/statistics/theme/${theme}`, count.toString(), {
+  for (const theme of Object.keys(themes)) {
+    // Get the rest of the statistics for this theme
+    const themeStatistics = await mapComplete.getThemeStatistics(mapCompleteChangesets, theme)
+
+    // Publish the data for the theme
+    await client.publish(`mapcomplete/statistics/theme/${theme}`, JSON.stringify(themeStatistics), {
       retain: true,
     })
+
+    // Also everything to its own topic
+    for (const [key, value] of Object.entries(themeStatistics)) {
+      // Handle nested objects
+      if (typeof value === "object") {
+        for (const [subKey, subValue] of Object.entries(value)) {
+          await client.publish(
+            `mapcomplete/statistics/theme/${theme}/${key}/${subKey}`,
+            JSON.stringify(subValue),
+            {
+              retain: true,
+            }
+          )
+        }
+        // Also publish the whole object
+        await client.publish(
+          `mapcomplete/statistics/theme/${theme}/${key}`,
+          JSON.stringify(value),
+          {
+            retain: true,
+          }
+        )
+      } else if (typeof value === "number") {
+        await client.publish(`mapcomplete/statistics/theme/${theme}/${key}`, value.toString(), {
+          retain: true,
+        })
+      } else if (typeof value === "string") {
+        await client.publish(`mapcomplete/statistics/theme/${theme}/${key}`, value, {
+          retain: true,
+        })
+      } else {
+        await client.publish(
+          `mapcomplete/statistics/theme/${theme}/${key}`,
+          JSON.stringify(value),
+          {
+            retain: true,
+          }
+        )
+      }
+    }
 
     // Also publish the icon for the theme
     const themeDetails = mapCompleteThemes.find((t) => t.id === theme)
@@ -242,49 +292,6 @@ async function publishThemeData(
         retain: true,
       })
     }
-
-    // Publish amount of users for this theme
-    const users = mapCompleteChangesets.reduce((acc, cur) => {
-      // Get the theme from the changeset
-      const themeId = cur.properties.metadata["theme"]
-      // If the theme is not the one we're looking for, skip
-      if (themeId !== theme) {
-        return acc
-      }
-      // Get the user from the changeset
-      const user = cur.properties.user
-      // If the user is not in the object, add it
-      if (acc[user] === undefined) {
-        acc[user] = 0
-      }
-      // Increase the count for the user
-      acc[user]++
-      return acc
-    }, {} as Record<string, number>)
-    // Sort the users by the number of changesets
-    const sortedUsers = Object.fromEntries(Object.entries(users).sort(([, a], [, b]) => b - a))
-
-    await client.publish(
-      `mapcomplete/statistics/theme/${theme}/users`,
-      JSON.stringify(sortedUsers),
-      {
-        retain: true,
-      }
-    )
-
-    // Publish total users for this theme
-    await client.publish(
-      `mapcomplete/statistics/theme/${theme}/totalUsers`,
-      Object.keys(users).length.toString(),
-      {
-        retain: true,
-      }
-    )
-
-    // Publish top user for this theme
-    await client.publish(`mapcomplete/statistics/theme/${theme}/topUser`, helpers.findTop(users), {
-      retain: true,
-    })
   }
 }
 

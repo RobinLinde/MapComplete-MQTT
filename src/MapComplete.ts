@@ -7,7 +7,22 @@ import { Helpers } from "./Helpers"
 /**
  * Interface for the statistics object we create
  */
-export interface Statistics {
+interface BasicStatistics {
+  users: {
+    total: number
+    top: string
+    last: string
+    users: Record<string, number>
+  }
+  questions: number
+  images: number
+  points: number
+}
+
+/**
+ * Interface for the complete statistics object
+ */
+export interface Statistics extends BasicStatistics {
   /**
    * Details about the changesets
    */
@@ -45,21 +60,24 @@ export interface Statistics {
       url: string
     }[]
   }
-  users: {
-    total: number
-    top: string
-    last: string
-    users: Record<string, number>
-  }
+
   themes: {
     total: number
     top: string
     last: string
     themes: Record<string, number>
   }
-  questions: number
-  images: number
-  points: number
+}
+
+/**
+ * Interface for the theme statistics object
+ */
+export interface ThemeStatistics extends BasicStatistics {
+  changesets: {
+    total: number
+    last: number
+    lastUrl: string
+  }
 }
 
 /**
@@ -356,6 +374,105 @@ export class MapComplete {
       },
       questions,
       images,
+      points,
+    }
+
+    return statistics
+  }
+
+  /**
+   * Function to get statistics for a specific theme
+   *
+   * @param theme Theme to get statistics for
+   * @param changesets List of changesets to get statistics for
+   * @returns Object containing the statistics for the theme
+   */
+  public async getThemeStatistics(
+    changesets: Changeset[],
+    theme: string
+  ): Promise<ThemeStatistics> {
+    // Filter the changesets for the given theme
+    const themeChangesets = changesets
+      .filter((c) => c.properties.metadata["theme"] === theme)
+      .sort((a, b) => a.id - b.id)
+
+    // Get the statistics for the theme
+
+    // Unique users
+    const userCount = new Set(themeChangesets.map((c) => c.properties.uid)).size
+
+    // Users
+    let users = themeChangesets.reduce((acc, cur) => {
+      // If the user is not in the object, add it
+      if (acc[cur.properties.user] === undefined) {
+        acc[cur.properties.user] = 0
+      }
+      // Increase the count for the user
+      acc[cur.properties.user]++
+      return acc
+    }, {} as Record<string, number>)
+    // Sort the users by the number of changesets
+    users = Object.fromEntries(Object.entries(users).sort(([, a], [, b]) => b - a))
+
+    // Total number of answered questions of all changesets for this theme
+    const questions = themeChangesets.reduce((acc, cur) => {
+      // Check if the changeset has the answer metadata
+      if (cur.properties.metadata["answer"] === undefined) {
+        // Skip this changeset
+        return acc
+      }
+      // Get the number of answered questions from the changeset
+      const changesetQuestions = parseInt(cur.properties.metadata["answer"])
+      // Add the number of answered questions to the total
+      return acc + changesetQuestions
+    }, 0)
+
+    // Total number of added images of all changesets for this theme
+    const images = themeChangesets.reduce((acc, cur) => {
+      // Check if the changeset has the image metadata
+      if (cur.properties.metadata["add-image"] === undefined) {
+        // Skip this changeset
+        return acc
+      }
+      // Get the number of added images from the changeset
+      const changesetImages = parseInt(cur.properties.metadata["add-image"])
+      // Add the number of added images to the total
+      return acc + changesetImages
+    }, 0)
+
+    // Total number of added points of all changesets for this theme
+    const points = themeChangesets.reduce((acc, cur) => {
+      // Check if the changeset has the create metadata
+      if (cur.properties.metadata["create"] === undefined) {
+        // Skip this changeset
+        return acc
+      }
+      // Get the number of added points from the changeset
+      const changesetPoints = parseInt(cur.properties.metadata["create"])
+      // Add the number of added points to the total
+      return acc + changesetPoints
+    }, 0)
+
+    const statistics: ThemeStatistics = {
+      changesets: {
+        total: themeChangesets.length,
+        last: themeChangesets.length > 0 ? themeChangesets[themeChangesets.length - 1].id : null,
+        lastUrl:
+          themeChangesets.length > 0
+            ? `https://osm.org/changeset/${themeChangesets[themeChangesets.length - 1].id}`
+            : null,
+      },
+      images,
+      questions,
+      users: {
+        total: userCount,
+        top: this.helpers.findTop(users),
+        last:
+          themeChangesets.length > 0
+            ? themeChangesets[themeChangesets.length - 1].properties.user
+            : null,
+        users,
+      },
       points,
     }
 
