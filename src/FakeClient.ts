@@ -1,11 +1,11 @@
-import { IClientPublishOptions } from "async-mqtt";
-import { Logger } from "winston";
+import { IClientPublishOptions } from "async-mqtt"
+import { Logger } from "winston"
 
 export default class FakeClient {
-  logger: Logger;
+  logger: Logger
 
   constructor(logger: Logger) {
-    this.logger = logger;
+    this.logger = logger
   }
 
   public publish(
@@ -13,9 +13,7 @@ export default class FakeClient {
     message: string | Buffer,
     opts?: IClientPublishOptions
   ): Promise<void> {
-    this.logger.info(
-      `FakeClient.publish(${topic}, ${message}, ${JSON.stringify(opts)})`
-    );
-    return Promise.resolve();
+    this.logger.debug(`FakeClient.publish(${topic}, ${message}, ${JSON.stringify(opts)})`)
+    return Promise.resolve()
   }
 }
