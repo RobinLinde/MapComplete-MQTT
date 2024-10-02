@@ -26,6 +26,7 @@ export class HomeAssistant {
     name: "MapComplete",
     sw_version: version,
     model: "MapComplete Statistics",
+    identifiers: ["mapcomplete"],
     manufacturer: "MapComplete MQTT",
   }
 
@@ -185,6 +186,7 @@ export class HomeAssistant {
           name: theme.title,
           sw_version: version,
           model: "MapComplete Statistics",
+          identifiers: [`mapcomplete_theme_${theme.id}`],
           manufacturer: "MapComplete MQTT",
         }
 
