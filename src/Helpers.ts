@@ -32,4 +32,15 @@ export class Helpers {
     // Return the key or keys with the highest value
     return keys.length === 1 ? keys[0] : keys.join(", ")
   }
+
+  /**
+   * Function to clean a theme name, currently just replaces slashes with underscores
+   *
+   * @param name Name to clean
+   * @returns Cleaned name
+   */
+  public cleanThemeName(name: string): string {
+    // Replace slashes with underscores
+    return name.replace("/", "_")
+  }
 }

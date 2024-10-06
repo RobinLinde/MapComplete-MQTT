@@ -7,6 +7,7 @@ import { ExtendedTheme } from "./@types/MapComplete"
 import { HomeAssistant } from "./HomeAssistant"
 import { OsmCha } from "./OsmCha"
 import { MapComplete, Statistics } from "./MapComplete"
+import { Helpers } from "./Helpers"
 
 // Standard variables
 dotenv.config()
@@ -50,6 +51,7 @@ const mapCompleteThemes: ExtendedTheme[] = []
 let homeAssistant: HomeAssistant
 const osmCha = new OsmCha(process.env.OSMCHA_TOKEN, logger)
 const mapComplete = new MapComplete(mapCompleteThemes, logger)
+const helpers = new Helpers()
 
 // Configure timezone to UTC
 process.env.TZ = "UTC"
@@ -240,10 +242,17 @@ async function publishThemeData(
     // Get the rest of the statistics for this theme
     const themeStatistics = await mapComplete.getThemeStatistics(mapCompleteChangesets, theme)
 
+    // Clean the theme name
+    const cleanedTheme = helpers.cleanThemeName(theme)
+
     // Publish the data for the theme
-    await client.publish(`mapcomplete/statistics/theme/${theme}`, JSON.stringify(themeStatistics), {
-      retain: true,
-    })
+    await client.publish(
+      `mapcomplete/statistics/theme/${cleanedTheme}`,
+      JSON.stringify(themeStatistics),
+      {
+        retain: true,
+      }
+    )
 
     // Also everything to its own topic
     for (const [key, value] of Object.entries(themeStatistics)) {
@@ -251,7 +260,7 @@ async function publishThemeData(
       if (typeof value === "object") {
         for (const [subKey, subValue] of Object.entries(value)) {
           await client.publish(
-            `mapcomplete/statistics/theme/${theme}/${key}/${subKey}`,
+            `mapcomplete/statistics/theme/${cleanedTheme}/${key}/${subKey}`,
             JSON.stringify(subValue),
             {
               retain: true,
@@ -260,23 +269,27 @@ async function publishThemeData(
         }
         // Also publish the whole object
         await client.publish(
-          `mapcomplete/statistics/theme/${theme}/${key}`,
+          `mapcomplete/statistics/theme/${cleanedTheme}/${key}`,
           JSON.stringify(value),
           {
             retain: true,
           }
         )
       } else if (typeof value === "number") {
-        await client.publish(`mapcomplete/statistics/theme/${theme}/${key}`, value.toString(), {
-          retain: true,
-        })
+        await client.publish(
+          `mapcomplete/statistics/theme/${cleanedTheme}/${key}`,
+          value.toString(),
+          {
+            retain: true,
+          }
+        )
       } else if (typeof value === "string") {
-        await client.publish(`mapcomplete/statistics/theme/${theme}/${key}`, value, {
+        await client.publish(`mapcomplete/statistics/theme/${cleanedTheme}/${key}`, value, {
           retain: true,
         })
       } else {
         await client.publish(
-          `mapcomplete/statistics/theme/${theme}/${key}`,
+          `mapcomplete/statistics/theme/${cleanedTheme}/${key}`,
           JSON.stringify(value),
           {
             retain: true,
@@ -288,7 +301,7 @@ async function publishThemeData(
     // Also publish the icon for the theme
     const themeDetails = mapCompleteThemes.find((t) => t.id === theme)
     if (themeDetails) {
-      await client.publish(`mapcomplete/statistics/theme/${theme}/icon`, themeDetails.icon, {
+      await client.publish(`mapcomplete/statistics/theme/${cleanedTheme}/icon`, themeDetails.icon, {
         retain: true,
       })
     }

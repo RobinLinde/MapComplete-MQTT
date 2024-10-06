@@ -5,6 +5,7 @@ import { Logger } from "winston"
 import { version } from "./Globals"
 import { Changeset } from "./@types/OSMCha"
 import { ThemeStatistics } from "./MapComplete"
+import { Helpers } from "./Helpers"
 
 /**
  * Various function required for the Home Assistant integration, mostly related to auto-discovery over MQTT.
@@ -13,6 +14,7 @@ import { ThemeStatistics } from "./MapComplete"
 export class HomeAssistant {
   client: AsyncMqttClient | FakeClient
   logger: Logger
+  helpers = new Helpers()
 
   constructor(client: AsyncMqttClient | FakeClient, logger: Logger) {
     this.client = client
@@ -181,88 +183,87 @@ export class HomeAssistant {
       if (!theme.published) {
         this.logger.info(`Publishing sensor configuration for ${theme.title}`)
 
+        // Replace slashes in the theme ID with underscores
+        const themeId = this.helpers.cleanThemeName(theme.id)
+
         // Create a Theme device
         const device = {
           name: theme.title,
           sw_version: version,
           model: "MapComplete Statistics",
-          identifiers: [`mapcomplete_theme_${theme.id}`],
+          identifiers: [`mapcomplete_theme_${themeId}`],
           manufacturer: "MapComplete MQTT",
         }
 
         const sensors = {
           "homeassistant/sensor/mapcomplete/theme_[THEME_ID]_changesets/config": {
             name: "Changesets Today",
-            state_topic: `mapcomplete/statistics/theme/${theme.id}/changesets/total`,
+            state_topic: `mapcomplete/statistics/theme/${themeId}/changesets/total`,
             entity_picture: theme.icon,
             icon: "mdi:map-marker",
             unit_of_measurement: "changesets",
-            unique_id: `mapcomplete_theme_${theme.id}_changesets`,
+            unique_id: `mapcomplete_theme_${themeId}_changesets`,
             device,
           },
           "homeassistant/image/mapcomplete/theme_[THEME_ID]_icon/config": {
             name: "Icon",
-            url_topic: `mapcomplete/statistics/theme/${theme.id}/icon`,
+            url_topic: `mapcomplete/statistics/theme/${themeId}/icon`,
             entity_picture: theme.icon,
-            unique_id: `mapcomplete_theme_${theme.id}_icon`,
+            unique_id: `mapcomplete_theme_${themeId}_icon`,
             device,
           },
           "homeassistant/sensor/mapcomplete/theme_[THEME_ID]_users/config": {
             name: "Users Today",
-            state_topic: `mapcomplete/statistics/theme/${theme.id}/users/total`,
+            state_topic: `mapcomplete/statistics/theme/${themeId}/users/total`,
             icon: "mdi:account",
             unit_of_measurement: "users",
-            unique_id: `mapcomplete_theme_${theme.id}_users`,
+            unique_id: `mapcomplete_theme_${themeId}_users`,
             device,
           },
           "homeassistant/sensor/mapcomplete/theme_[THEME_ID]_last_user/config": {
             name: "Last User",
-            state_topic: `mapcomplete/statistics/theme/${theme.id}`,
+            state_topic: `mapcomplete/statistics/theme/${themeId}`,
             icon: "mdi:account",
-            unique_id: `mapcomplete_theme_${theme.id}_last_user`,
+            unique_id: `mapcomplete_theme_${themeId}_last_user`,
             value_template: "{{ value_json.users.last }}",
             device,
           },
           "homeassistant/sensor/mapcomplete/theme_[THEME_ID]_top_user/config": {
             name: "Top User(s)",
-            state_topic: `mapcomplete/statistics/theme/${theme.id}`,
+            state_topic: `mapcomplete/statistics/theme/${themeId}`,
             icon: "mdi:account",
-            unique_id: `mapcomplete_theme_${theme.id}_top_user`,
+            unique_id: `mapcomplete_theme_${themeId}_top_user`,
             value_template: "{{ value_json.users.top }}",
             device,
           },
           "homeassistant/sensor/mapcomplete/theme_[THEME_ID]_questions/config": {
             name: "Questions Answered",
-            state_topic: `mapcomplete/statistics/theme/${theme.id}/questions`,
+            state_topic: `mapcomplete/statistics/theme/${themeId}/questions`,
             icon: "mdi:comment-question",
-            unique_id: `mapcomplete_theme_${theme.id}_questions`,
+            unique_id: `mapcomplete_theme_${themeId}_questions`,
             device,
           },
           "homeassistant/sensor/mapcomplete/theme_[THEME_ID]_images/config": {
             name: "Images Added",
-            state_topic: `mapcomplete/statistics/theme/${theme.id}/images`,
+            state_topic: `mapcomplete/statistics/theme/${themeId}/images`,
             icon: "mdi:image",
-            unique_id: `mapcomplete_theme_${theme.id}_images`,
+            unique_id: `mapcomplete_theme_${themeId}_images`,
             device,
           },
           "homeassistant/sensor/mapcomplete/theme_[THEME_ID]_points/config": {
             name: "Points Added",
-            state_topic: `mapcomplete/statistics/theme/${theme.id}/points`,
+            state_topic: `mapcomplete/statistics/theme/${themeId}/points`,
             icon: "mdi:map-marker",
-            unique_id: `mapcomplete_theme_${theme.id}_points`,
+            unique_id: `mapcomplete_theme_${themeId}_points`,
             device,
           },
         }
 
         // Publish the sensor configuration
         for (const [topic, payload] of Object.entries(sensors)) {
-          await this.client.publish(
-            topic.replace("[THEME_ID]", theme.id),
-            JSON.stringify(payload),
-            {
-              retain: true,
-            }
-          )
+          await this.client.publish(topic.replace("[THEME_ID]", themeId), JSON.stringify(payload), {
+            retain: true,
+          })
         }
         // Mark the theme as published
         theme.published = true
@@ -300,9 +301,12 @@ export class HomeAssistant {
         points: 0,
       }
 
+      // Clean the theme name
+      const themeId = this.helpers.cleanThemeName(theme.id)
+
       // Publish the statistics
       await this.client.publish(
-        `mapcomplete/statistics/theme/${theme.id}`,
+        `mapcomplete/statistics/theme/${themeId}`,
         JSON.stringify(statistics),
         {
           retain: true,
@@ -312,7 +316,7 @@ export class HomeAssistant {
       // Also send the empty statistics to their own topics
       for (const [topic, payload] of Object.entries(statistics)) {
         await this.client.publish(
-          `mapcomplete/statistics/theme/${theme.id}/${topic}`,
+          `mapcomplete/statistics/theme/${themeId}/${topic}`,
           JSON.stringify(payload),
           {
             retain: true,
@@ -322,7 +326,7 @@ export class HomeAssistant {
         if (typeof payload === "object") {
           for (const [subTopic, subPayload] of Object.entries(payload)) {
             await this.client.publish(
-              `mapcomplete/statistics/theme/${theme.id}/${topic}/${subTopic}`,
+              `mapcomplete/statistics/theme/${themeId}/${topic}/${subTopic}`,
               JSON.stringify(subPayload),
               {
                 retain: true,
