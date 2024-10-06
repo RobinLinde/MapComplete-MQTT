@@ -318,6 +318,18 @@ export class HomeAssistant {
             retain: true,
           }
         )
+        // Also go one level deeper, if the payload is an object
+        if (typeof payload === "object") {
+          for (const [subTopic, subPayload] of Object.entries(payload)) {
+            await this.client.publish(
+              `mapcomplete/statistics/theme/${theme.id}/${topic}/${subTopic}`,
+              JSON.stringify(subPayload),
+              {
+                retain: true,
+              }
+            )
+          }
+        }
       }
     }
   }
