@@ -27,7 +27,7 @@ jobs:
       - name: Run application
         run: npm run start
         env:
-          DRY_RUN: True
+          DRY_RUN: "True"
           OSMCHA_TOKEN: ${{ secrets.OSMCHA_TOKEN }}
       - name: Upload logs
         uses: actions/upload-artifact@v4
