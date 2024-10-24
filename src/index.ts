@@ -8,6 +8,7 @@ import { HomeAssistant } from "./HomeAssistant"
 import { OsmCha } from "./OsmCha"
 import { MapComplete, Statistics } from "./MapComplete"
 import { Helpers } from "./Helpers"
+import { writeFileSync } from "fs"
 
 // Standard variables
 dotenv.config()
@@ -87,6 +88,10 @@ async function main() {
     setInterval(async () => update(client), 1000 * update_interval)
   } else {
     logger.info("Dry run, not creating interval, exiting")
+    // Save the data to a file
+    const mqttData = (client as FakeClient).data
+    writeFileSync("mqttData.json", JSON.stringify(mqttData, null, 2))
+
     // Wait 5 seconds before exiting
     setTimeout(() => process.exit(0), 5000)
   }
