@@ -29,6 +29,7 @@ jobs:
         env:
           DRY_RUN: "True"
           OSMCHA_TOKEN: ${{ secrets.OSMCHA_TOKEN }}
+          DEBUG: "True"
       - name: Upload logs
         uses: actions/upload-artifact@v4
         with:
