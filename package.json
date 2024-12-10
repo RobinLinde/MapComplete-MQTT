@@ -18,7 +18,7 @@
     "@types/geojson": "^7946.0.14",
     "@types/node": "^22.8.2",
     "async-mqtt": "^2.6.3",
-    "dotenv": "^16.4.5",
+    "dotenv": "^16.4.7",
     "fast-average-color-node": "^3.1.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3",
