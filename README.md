@@ -1,6 +1,6 @@
 # MapComplete-MQTT
 
-MapComplete-MQTT is a serrvice publishing statistics about [OpenStreetMap](https://www.openstreetmap.org) changesets made with [MapComplete](https://github.com/pietervdvn/MapComplete) to an MQTT broker.
+MapComplete-MQTT is a service publishing statistics about [OpenStreetMap](https://www.openstreetmap.org) changesets made with [MapComplete](https://github.com/pietervdvn/MapComplete) to an MQTT broker.
 
 ## Running the service
 
