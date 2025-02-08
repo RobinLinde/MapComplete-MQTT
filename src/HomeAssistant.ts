@@ -1,24 +1,24 @@
-import { AsyncMqttClient } from "async-mqtt"
-import FakeClient from "./FakeClient"
-import { ExtendedTheme } from "./@types/MapComplete"
-import { Logger } from "winston"
-import { version } from "./Globals"
-import { Changeset } from "./@types/OSMCha"
-import { ThemeStatistics } from "./MapComplete"
-import { Helpers } from "./Helpers"
+import { AsyncMqttClient } from "async-mqtt";
+import FakeClient from "./FakeClient";
+import { ExtendedTheme } from "./@types/MapComplete";
+import { Logger } from "winston";
+import { version } from "./Globals";
+import { Changeset } from "./@types/OSMCha";
+import { ThemeStatistics } from "./MapComplete";
+import { Helpers } from "./Helpers";
 
 /**
  * Various function required for the Home Assistant integration, mostly related to auto-discovery over MQTT.
  */
 
 export class HomeAssistant {
-  client: AsyncMqttClient | FakeClient
-  logger: Logger
-  helpers = new Helpers()
+  client: AsyncMqttClient | FakeClient;
+  logger: Logger;
+  helpers = new Helpers();
 
   constructor(client: AsyncMqttClient | FakeClient, logger: Logger) {
-    this.client = client
-    this.logger = logger
+    this.client = client;
+    this.logger = logger;
   }
 
   /**
@@ -30,7 +30,7 @@ export class HomeAssistant {
     model: "MapComplete Statistics",
     identifiers: ["mapcomplete"],
     manufacturer: "MapComplete MQTT",
-  }
+  };
 
   /**
    * Function that publishes sensors for the total statistics
@@ -160,14 +160,14 @@ export class HomeAssistant {
         unique_id: "mapcomplete_points_total",
         device: this.device,
       },
-    }
+    };
 
     // Publish the configuration for each sensor
-    this.logger.info("Publishing sensor configuration to MQTT")
+    this.logger.info("Publishing sensor configuration to MQTT");
     for (const [topic, payload] of Object.entries(sensors)) {
       await this.client.publish(topic, JSON.stringify(payload), {
         retain: true,
-      })
+      });
     }
   }
 
@@ -176,15 +176,17 @@ export class HomeAssistant {
    *
    * For the generic, total sensors, @see publishSensorConfig
    */
-  public async publishThemeSensorConfig(themes: ExtendedTheme[]): Promise<void> {
+  public async publishThemeSensorConfig(
+    themes: ExtendedTheme[]
+  ): Promise<void> {
     // Loop through the themes
     for (const theme of themes) {
       // Check if we have already published the theme
       if (!theme.published) {
-        this.logger.info(`Publishing sensor configuration for ${theme.title}`)
+        this.logger.info(`Publishing sensor configuration for ${theme.title}`);
 
         // Replace slashes in the theme ID with underscores
-        const themeId = this.helpers.cleanThemeName(theme.id)
+        const themeId = this.helpers.cleanThemeName(theme.id);
 
         // Create a Theme device
         const device = {
@@ -193,18 +195,19 @@ export class HomeAssistant {
           model: "MapComplete Statistics",
           identifiers: [`mapcomplete_theme_${themeId}`],
           manufacturer: "MapComplete MQTT",
-        }
+        };
 
         const sensors = {
-          "homeassistant/sensor/mapcomplete/theme_[THEME_ID]_changesets/config": {
-            name: "Changesets Today",
-            state_topic: `mapcomplete/statistics/theme/${themeId}/changesets/total`,
-            entity_picture: theme.icon,
-            icon: "mdi:map-marker",
-            unit_of_measurement: "changesets",
-            unique_id: `mapcomplete_theme_${themeId}_changesets`,
-            device,
-          },
+          "homeassistant/sensor/mapcomplete/theme_[THEME_ID]_changesets/config":
+            {
+              name: "Changesets Today",
+              state_topic: `mapcomplete/statistics/theme/${themeId}/changesets/total`,
+              entity_picture: theme.icon,
+              icon: "mdi:map-marker",
+              unit_of_measurement: "changesets",
+              unique_id: `mapcomplete_theme_${themeId}_changesets`,
+              device,
+            },
           "homeassistant/image/mapcomplete/theme_[THEME_ID]_icon/config": {
             name: "Icon",
             url_topic: `mapcomplete/statistics/theme/${themeId}/icon`,
@@ -220,14 +223,15 @@ export class HomeAssistant {
             unique_id: `mapcomplete_theme_${themeId}_users`,
             device,
           },
-          "homeassistant/sensor/mapcomplete/theme_[THEME_ID]_last_user/config": {
-            name: "Last User",
-            state_topic: `mapcomplete/statistics/theme/${themeId}`,
-            icon: "mdi:account",
-            unique_id: `mapcomplete_theme_${themeId}_last_user`,
-            value_template: "{{ value_json.users.last }}",
-            device,
-          },
+          "homeassistant/sensor/mapcomplete/theme_[THEME_ID]_last_user/config":
+            {
+              name: "Last User",
+              state_topic: `mapcomplete/statistics/theme/${themeId}`,
+              icon: "mdi:account",
+              unique_id: `mapcomplete_theme_${themeId}_last_user`,
+              value_template: "{{ value_json.users.last }}",
+              device,
+            },
           "homeassistant/sensor/mapcomplete/theme_[THEME_ID]_top_user/config": {
             name: "Top User(s)",
             state_topic: `mapcomplete/statistics/theme/${themeId}`,
@@ -236,13 +240,14 @@ export class HomeAssistant {
             value_template: "{{ value_json.users.top }}",
             device,
           },
-          "homeassistant/sensor/mapcomplete/theme_[THEME_ID]_questions/config": {
-            name: "Questions Answered",
-            state_topic: `mapcomplete/statistics/theme/${themeId}/questions`,
-            icon: "mdi:comment-question",
-            unique_id: `mapcomplete_theme_${themeId}_questions`,
-            device,
-          },
+          "homeassistant/sensor/mapcomplete/theme_[THEME_ID]_questions/config":
+            {
+              name: "Questions Answered",
+              state_topic: `mapcomplete/statistics/theme/${themeId}/questions`,
+              icon: "mdi:comment-question",
+              unique_id: `mapcomplete_theme_${themeId}_questions`,
+              device,
+            },
           "homeassistant/sensor/mapcomplete/theme_[THEME_ID]_images/config": {
             name: "Images Added",
             state_topic: `mapcomplete/statistics/theme/${themeId}/images`,
@@ -257,29 +262,58 @@ export class HomeAssistant {
             unique_id: `mapcomplete_theme_${themeId}_points`,
             device,
           },
-        }
+        };
 
         // Publish the sensor configuration
         for (const [topic, payload] of Object.entries(sensors)) {
-          await this.client.publish(topic.replace("[THEME_ID]", themeId), JSON.stringify(payload), {
-            retain: true,
-          })
+          await this.client.publish(
+            topic.replace("[THEME_ID]", themeId),
+            JSON.stringify(payload),
+            {
+              retain: true,
+            }
+          );
         }
         // Mark the theme as published
-        theme.published = true
+        theme.published = true;
       }
     }
   }
 
   public async cleanUpSensors(
-    themes: ExtendedTheme[],
     mapCompleteChangesets: Changeset[]
   ): Promise<void> {
+    this.logger.info("Cleaning up sensors, subscribing to all themes");
+    // We're gonna ignore the themes variable, and subscribe to the `mapcomplete/statistics/theme/#` topic to get all themes that have been published
+    await this.client.subscribe("mapcomplete/statistics/theme/#");
+
+    let themeList: string[] = [];
+
+    this.client.on("message", async (topic, _message) => {
+      const theme = topic.split("/")[3];
+      themeList.push(theme);
+    });
+
+    // Wait for a couple of seconds to make sure we have all themes
+    this.logger.debug("Waiting for 5 seconds to get all themes");
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    this.logger.debug(
+      `Done waiting, got ${themeList.length} theme-ish entries`
+    );
+
+    // Filter duplicates
+    themeList = themeList.filter(
+      (theme, index) => themeList.indexOf(theme) === index
+    );
+    this.logger.debug(`Got ${themeList.length} unique themes`);
+
     // Look for themes that exist only in the mapCompleteThemes array, but not in the mapCompleteChangesets array
     const themesInChangesets = mapCompleteChangesets.map(
       (changeset) => changeset.properties.metadata["theme"]
-    )
-    const themesToRemove = themes.filter((theme) => !themesInChangesets.includes(theme.id))
+    );
+    const themesToRemove = themeList.filter(
+      (theme) => !themesInChangesets.includes(theme)
+    );
 
     // Loop through the themes to remove, with remove being the sending of an empty statistics object
     for (const theme of themesToRemove) {
@@ -299,10 +333,10 @@ export class HomeAssistant {
         questions: 0,
         images: 0,
         points: 0,
-      }
+      };
 
       // Clean the theme name
-      const themeId = this.helpers.cleanThemeName(theme.id)
+      const themeId = this.helpers.cleanThemeName(theme);
 
       // Publish the statistics
       await this.client.publish(
@@ -311,7 +345,7 @@ export class HomeAssistant {
         {
           retain: true,
         }
-      )
+      );
 
       // Also send the empty statistics to their own topics
       for (const [topic, payload] of Object.entries(statistics)) {
@@ -321,7 +355,7 @@ export class HomeAssistant {
           {
             retain: true,
           }
-        )
+        );
         // Also go one level deeper, if the payload is an object
         if (typeof payload === "object") {
           for (const [subTopic, subPayload] of Object.entries(payload)) {
@@ -331,7 +365,7 @@ export class HomeAssistant {
               {
                 retain: true,
               }
-            )
+            );
           }
         }
       }
