@@ -175,7 +175,7 @@ async function update(client: AsyncMqttClient | FakeClient) {
         .join(", ")}`
     );
     logger.info(
-      `Total questions answered: ${statistics.questions}, total images added: ${statistics.images}, total points added: ${statistics.points}`
+      `Total questions answered: ${statistics.questions}, total images added: ${statistics.images}, total points added: ${statistics.points}, total items imported: ${statistics.import}`
     );
 
     // Publish the statistics

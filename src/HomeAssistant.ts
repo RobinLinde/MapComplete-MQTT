@@ -160,6 +160,14 @@ export class HomeAssistant {
         unique_id: "mapcomplete_points_total",
         device: this.device,
       },
+      "homeassistant/sensor/mapcomplete/totalImport/config": {
+        name: "Imported Objects Today",
+        unit_of_measurement: "objects",
+        state_topic: "mapcomplete/statistics/import",
+        icon: "mdi:upload",
+        unique_id: "mapcomplete_import_total",
+        device: this.device,
+      },
     };
 
     // Publish the configuration for each sensor
@@ -262,6 +270,13 @@ export class HomeAssistant {
             unique_id: `mapcomplete_theme_${themeId}_points`,
             device,
           },
+          "homeassistant/sensor/mapcomplete/theme_[THEME_ID]_import/config": {
+            name: "Imported Objects",
+            state_topic: `mapcomplete/statistics/theme/${themeId}/import`,
+            icon: "mdi:upload",
+            unique_id: `mapcomplete_theme_${themeId}_import`,
+            device,
+          },
         };
 
         // Publish the sensor configuration
@@ -333,6 +348,7 @@ export class HomeAssistant {
         questions: 0,
         images: 0,
         points: 0,
+        import: 0,
       };
 
       // Publish the statistics

@@ -17,6 +17,7 @@ interface BasicStatistics {
   questions: number;
   images: number;
   points: number;
+  import: number;
 }
 
 /**
@@ -322,6 +323,19 @@ export class MapComplete {
       return acc + changesetPoints;
     }, 0);
 
+    // Total number of imported objects of all changesets
+    const importItems = changesets.reduce((acc, cur) => {
+      // Check if the changeset has the import metadata
+      if (cur.properties.metadata["import"] === undefined) {
+        // Skip this changeset
+        return acc;
+      }
+      // Get the number of imported objects from the changeset
+      const changesetImport = parseInt(cur.properties.metadata["import"]);
+      // Add the number of imported objects to the total
+      return acc + changesetImport;
+    }, 0);
+
     let lastId: number | null;
     let lastUser: string | null;
     let lastTheme: string | null;
@@ -388,6 +402,7 @@ export class MapComplete {
       questions,
       images,
       points,
+      import: importItems,
     };
 
     return statistics;
@@ -469,6 +484,19 @@ export class MapComplete {
       return acc + changesetPoints;
     }, 0);
 
+    // Total number of imported items of all changesets for this theme
+    const importItems = themeChangesets.reduce((acc, cur) => {
+      // Check if the changeset has the import metadata
+      if (cur.properties.metadata["import"] === undefined) {
+        // Skip this changeset
+        return acc;
+      }
+      // Get the number of imported objects from the changeset
+      const changesetImport = parseInt(cur.properties.metadata["import"]);
+      // Add the number of imported objects to the total
+      return acc + changesetImport;
+    }, 0);
+
     const statistics: ThemeStatistics = {
       changesets: {
         total: themeChangesets.length,
@@ -495,6 +523,7 @@ export class MapComplete {
         users,
       },
       points,
+      import: importItems,
     };
 
     return statistics;

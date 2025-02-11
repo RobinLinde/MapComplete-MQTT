@@ -58,6 +58,7 @@ Apart from this, some data is also published as a Home Assistant sensors, contai
 | `mapcomplete_questions_total`       | The total number of questions answered                                 |
 | `mapcomplete_images_total`          | The total number of images uploaded                                    |
 | `mapcomplete_points_total`          | The total number of points added                                       |
+| `mapcomplete_import_total`          | The total number of imported items                                     |
 
 ### Example data
 
@@ -126,6 +127,7 @@ Apart from this, some data is also published as a Home Assistant sensors, contai
   },
   "questions": 10,
   "images": 2,
-  "points": 3
+  "points": 3,
+  "import": 1
 }
 ```
