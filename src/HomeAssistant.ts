@@ -308,8 +308,8 @@ export class HomeAssistant {
     this.logger.debug(`Got ${themeList.length} unique themes`);
 
     // Look for themes that exist only in the mapCompleteThemes array, but not in the mapCompleteChangesets array
-    const themesInChangesets = mapCompleteChangesets.map(
-      (changeset) => changeset.properties.metadata["theme"]
+    const themesInChangesets = mapCompleteChangesets.map((changeset) =>
+      this.helpers.cleanThemeName(changeset.properties.metadata["theme"])
     );
     const themesToRemove = themeList.filter(
       (theme) => !themesInChangesets.includes(theme)
@@ -335,12 +335,9 @@ export class HomeAssistant {
         points: 0,
       };
 
-      // Clean the theme name
-      const themeId = this.helpers.cleanThemeName(theme);
-
       // Publish the statistics
       await this.client.publish(
-        `mapcomplete/statistics/theme/${themeId}`,
+        `mapcomplete/statistics/theme/${theme}`,
         JSON.stringify(statistics),
         {
           retain: true,
@@ -350,7 +347,7 @@ export class HomeAssistant {
       // Also send the empty statistics to their own topics
       for (const [topic, payload] of Object.entries(statistics)) {
         await this.client.publish(
-          `mapcomplete/statistics/theme/${themeId}/${topic}`,
+          `mapcomplete/statistics/theme/${theme}/${topic}`,
           JSON.stringify(payload),
           {
             retain: true,
@@ -360,7 +357,7 @@ export class HomeAssistant {
         if (typeof payload === "object") {
           for (const [subTopic, subPayload] of Object.entries(payload)) {
             await this.client.publish(
-              `mapcomplete/statistics/theme/${themeId}/${topic}/${subTopic}`,
+              `mapcomplete/statistics/theme/${theme}/${topic}/${subTopic}`,
               JSON.stringify(subPayload),
               {
                 retain: true,
