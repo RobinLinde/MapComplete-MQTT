@@ -10,6 +10,7 @@ interface JsonMqttData {
 export default class FakeClient {
   logger: Logger;
   data: JsonMqttData;
+  subscriptions: string[] = [];
 
   constructor(logger: Logger) {
     this.logger = logger;
@@ -49,7 +50,14 @@ export default class FakeClient {
 
   public subscribe(topic: string): Promise<ISubscriptionGrant[]> {
     this.logger.debug(`FakeClient.subscribe(${topic})`);
+    this.subscriptions.push(topic);
     return Promise.resolve([]);
+  }
+
+  public unsubscribe(topic: string): Promise<void> {
+    this.logger.debug(`FakeClient.unsubscribe(${topic})`);
+    this.subscriptions = this.subscriptions.filter((t) => t !== topic);
+    return Promise.resolve();
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type

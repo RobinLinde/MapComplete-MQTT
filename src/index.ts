@@ -112,7 +112,11 @@ async function main() {
  */
 async function update(client: AsyncMqttClient | FakeClient) {
   let newDay = false;
-  logger.info("Performing update");
+  logger.info(
+    `Performing update, last update was at ${new Date(
+      lastUpdateTime
+    ).toISOString()}`
+  );
   // Check if the last update time is still today
   if (new Date(lastUpdateTime).getDate() !== new Date().getDate()) {
     logger.info("New day, resetting changesets");

@@ -316,6 +316,9 @@ export class HomeAssistant {
       `Done waiting, got ${themeList.length} theme-ish entries`
     );
 
+    // Unsubscribe from the theme topics, so a next run actually gets the themes
+    await this.client.unsubscribe("mapcomplete/statistics/theme/#");
+
     // Filter duplicates
     themeList = themeList.filter(
       (theme, index) => themeList.indexOf(theme) === index
