@@ -32,7 +32,7 @@ export default class FakeClient {
       }
       current = child;
     }
-    if (!current.message) {
+    if (!message) {
       this.logger.warn(
         `FakeClient.saveMessage(${topic}, ${message}) - message is undefined, overwriting with an empty string`
       );
