@@ -182,6 +182,11 @@ async function update(client: AsyncMqttClient | FakeClient) {
       `Total questions answered: ${statistics.questions}, total images added: ${statistics.images}, total points added: ${statistics.points}, total items imported: ${statistics.import}`
     );
 
+    if (debug) {
+      logger.debug("Changesets", mapCompleteChangesets);
+      logger.debug("Statistics", statistics);
+    }
+
     // Publish the statistics
     await publishStatistics(client, statistics);
 
@@ -194,7 +199,7 @@ async function update(client: AsyncMqttClient | FakeClient) {
     // Update the lastChangesetTime
     lastUpdateTime = new Date().getTime();
   } catch (error) {
-    logger.error("Error while updating statistics", error);
+    logger.error("Error while updating statistics", error, error.stack);
   }
 
   // Clean up sensors for themes we don't have data for yet/any more
@@ -221,6 +226,12 @@ async function publishStatistics(
 
   // Also publish everything to its own topic
   for (const [key, value] of Object.entries(statistics)) {
+    // First check if the value is undefined
+    if (value == undefined) {
+      logger.error(`Value for ${key} is undefined, skipping`);
+      continue;
+    }
+
     // Handle nested objects
     if (typeof value === "object") {
       for (const [subKey, subValue] of Object.entries(value)) {
@@ -291,6 +302,12 @@ async function publishThemeData(
 
     // Also everything to its own topic
     for (const [key, value] of Object.entries(themeStatistics)) {
+      // First check if the value is undefined
+      if (value == undefined) {
+        logger.error(`Value for ${key} is undefined, skipping`);
+        continue;
+      }
+
       // Handle nested objects
       if (typeof value === "object") {
         for (const [subKey, subValue] of Object.entries(value)) {

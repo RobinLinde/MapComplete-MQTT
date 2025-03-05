@@ -32,7 +32,14 @@ export default class FakeClient {
       }
       current = child;
     }
-    current.message = message.toString();
+    if (!current.message) {
+      this.logger.warn(
+        `FakeClient.saveMessage(${topic}, ${message}) - message is undefined, overwriting with an empty string`
+      );
+      current.message = "";
+    } else {
+      current.message = message.toString();
+    }
   }
 
   public publish(

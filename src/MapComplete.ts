@@ -148,14 +148,14 @@ export class MapComplete {
       let image = themeDetails.theme.icon;
 
       // If the image URL is relative, prepend the host from the url
-      if (image.startsWith(".")) {
+      if (image && image.startsWith(".")) {
         image = `${themeDetails.baseUrl}/${image.slice(2)}`;
       }
 
       // Check if we already have a predefined color for this theme
       if (this.themeColors[theme]) {
         color = this.themeColors[theme];
-      } else {
+      } else if (image) {
         // We need to analyze the image to get the color
 
         this.logger.info(`Downloading theme image for ${theme} from ${image}`);
@@ -191,6 +191,9 @@ export class MapComplete {
           image,
           this.determineTitle(themeDetails.theme.title)
         );
+      } else {
+        // We don't have an image, use the default color
+        color = this.themeColors["default"];
       }
 
       // Return the details
