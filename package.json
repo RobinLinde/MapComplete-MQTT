@@ -21,7 +21,7 @@
     "dotenv": "^16.4.7",
     "fast-average-color-node": "^3.1.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.3",
+    "typescript": "^5.8.3",
     "winston": "^3.17.0"
   },
   "devDependencies": {
