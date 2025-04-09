@@ -129,13 +129,13 @@ async function update(client: AsyncMqttClient | FakeClient) {
     newDay = true;
   }
 
-  // Get date in YYYY-MM-DD HH:MM:SS format, minus 10 minutes to account for delays, unless this means we go back to yesterday
-  let date = new Date(lastUpdateTime - 1000 * 60 * 10).getTime();
+  // Since OSMCha doesn't provide info about whether a changeset is closed or not,
+  // We need to get everything from the current day (or query the OSM API for every changeset)
 
-  if (date < new Date().setHours(0, 0, 0, 0)) {
-    date = new Date().setHours(0, 0, 0, 0);
-  }
+  // Get date in YYYY-MM-DD HH:MM:SS format, for the start of the day
+  let date = new Date().setHours(0, 0, 0, 0);
 
+  // Convert the date to a string
   const dateStr = new Date(date).toISOString().slice(0, 19).replace("T", " ");
 
   logger.info(`Getting changesets since ${dateStr}`);
@@ -144,17 +144,8 @@ async function update(client: AsyncMqttClient | FakeClient) {
   try {
     const changesets = await osmCha.getChangesets(dateStr);
 
-    // Loop through the changesets
-    for (const changeset of changesets) {
-      // Check if the changeset is already in the array
-      if (mapCompleteChangesets.find((c) => c.id === changeset.id)) {
-        // Skip this changeset
-        continue;
-      }
-
-      // Add the changeset to the array
-      mapCompleteChangesets.push(changeset);
-    }
+    // Overwrite the complete array
+    mapCompleteChangesets = changesets;
 
     // Sort the changesets by ID
     mapCompleteChangesets.sort((a, b) => a.id - b.id);
