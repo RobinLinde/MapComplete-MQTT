@@ -133,7 +133,7 @@ async function update(client: AsyncMqttClient | FakeClient) {
   // We need to get everything from the current day (or query the OSM API for every changeset)
 
   // Get date in YYYY-MM-DD HH:MM:SS format, for the start of the day
-  let date = new Date().setHours(0, 0, 0, 0);
+  const date = new Date().setHours(0, 0, 0, 0);
 
   // Convert the date to a string
   const dateStr = new Date(date).toISOString().slice(0, 19).replace("T", " ");
