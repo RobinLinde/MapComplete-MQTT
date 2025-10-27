@@ -31,12 +31,12 @@ jobs:
           OSMCHA_TOKEN: ${{ secrets.OSMCHA_TOKEN }}
           DEBUG: "True"
       - name: Upload logs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: logs
           path: mapcomplete-stats.log
       - name: Upload example output
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: example-output
           path: mqttData.json
