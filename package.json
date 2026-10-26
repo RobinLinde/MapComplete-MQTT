@@ -16,19 +16,17 @@
   "license": "ISC",
   "dependencies": {
     "@types/geojson": "^7946.0.16",
-    "@types/node": "^22.14.1",
+    "@types/node": "^26.6.5",
     "async-mqtt": "^2.6.3",
-    "dotenv": "^16.4.7",
-    "fast-average-color-node": "^3.1.0",
+    "dotenv": "^18.0.9",
+    "fast-average-color-node": "^3.3.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3",
-    "winston": "^3.17.0"
+    "typescript": "^6.0.3",
+    "winston": "^3.19.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.24.0",
-    "@typescript-eslint/eslint-plugin": "^8.29.1",
-    "@typescript-eslint/parser": "^8.29.1",
-    "eslint": "^9.24.0",
-    "typescript-eslint": "^8.30.1"
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.13.0",
+    "typescript-eslint": "^8.72.0"
   }
 }

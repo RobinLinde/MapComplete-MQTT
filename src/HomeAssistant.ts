@@ -185,7 +185,7 @@ export class HomeAssistant {
    * For the generic, total sensors, @see publishSensorConfig
    */
   public async publishThemeSensorConfig(
-    themes: ExtendedTheme[]
+    themes: ExtendedTheme[],
   ): Promise<void> {
     // Loop through the themes
     for (const theme of themes) {
@@ -286,7 +286,7 @@ export class HomeAssistant {
             JSON.stringify(payload),
             {
               retain: true,
-            }
+            },
           );
         }
         // Mark the theme as published
@@ -296,7 +296,7 @@ export class HomeAssistant {
   }
 
   public async cleanUpSensors(
-    mapCompleteChangesets: Changeset[]
+    mapCompleteChangesets: Changeset[],
   ): Promise<void> {
     this.logger.info("Cleaning up sensors, subscribing to all themes");
     // We're gonna ignore the themes variable, and subscribe to the `mapcomplete/statistics/theme/#` topic to get all themes that have been published
@@ -313,7 +313,7 @@ export class HomeAssistant {
     this.logger.debug("Waiting for 5 seconds to get all themes");
     await new Promise((resolve) => setTimeout(resolve, 5000));
     this.logger.debug(
-      `Done waiting, got ${themeList.length} theme-ish entries`
+      `Done waiting, got ${themeList.length} theme-ish entries`,
     );
 
     // Unsubscribe from the theme topics, so a next run actually gets the themes
@@ -321,16 +321,16 @@ export class HomeAssistant {
 
     // Filter duplicates
     themeList = themeList.filter(
-      (theme, index) => themeList.indexOf(theme) === index
+      (theme, index) => themeList.indexOf(theme) === index,
     );
     this.logger.debug(`Got ${themeList.length} unique themes`);
 
     // Look for themes that exist only in the mapCompleteThemes array, but not in the mapCompleteChangesets array
     const themesInChangesets = mapCompleteChangesets.map((changeset) =>
-      this.helpers.cleanThemeName(changeset.properties.metadata["theme"])
+      this.helpers.cleanThemeName(changeset.properties.metadata["theme"]),
     );
     const themesToRemove = themeList.filter(
-      (theme) => !themesInChangesets.includes(theme)
+      (theme) => !themesInChangesets.includes(theme),
     );
 
     // Loop through the themes to remove, with remove being the sending of an empty statistics object
@@ -360,7 +360,7 @@ export class HomeAssistant {
         JSON.stringify(statistics),
         {
           retain: true,
-        }
+        },
       );
 
       // Also send the empty statistics to their own topics
@@ -370,7 +370,7 @@ export class HomeAssistant {
           JSON.stringify(payload),
           {
             retain: true,
-          }
+          },
         );
         // Also go one level deeper, if the payload is an object
         if (typeof payload === "object") {
@@ -380,7 +380,7 @@ export class HomeAssistant {
               JSON.stringify(subPayload),
               {
                 retain: true,
-              }
+              },
             );
           }
         }

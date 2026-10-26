@@ -10,8 +10,8 @@ import { Helpers } from "./Helpers";
 interface BasicStatistics {
   users: {
     total: number;
-    top: string;
-    last: string;
+    top: string | null;
+    last: string | null;
     users: Record<string, number>;
   };
   questions: number;
@@ -36,7 +36,7 @@ export interface Statistics extends BasicStatistics {
     /**
      * Numeric ID of the last changeset
      */
-    last: number;
+    last: number | null;
 
     /**
      * URL of the last changeset
@@ -46,8 +46,8 @@ export interface Statistics extends BasicStatistics {
     /**
      * Color of the last changeset, as a hex string
      */
-    lastColor: string;
-    lastColorRgb: [number, number, number];
+    lastColor: string | null;
+    lastColorRgb: [number, number, number] | null;
     colors: string[];
     colorsStr: string;
     colorsRgb: [number, number, number][];
@@ -65,7 +65,7 @@ export interface Statistics extends BasicStatistics {
   themes: {
     total: number;
     top: string;
-    last: string;
+    last: string | null;
     themes: Record<string, number>;
   };
 }
@@ -76,8 +76,8 @@ export interface Statistics extends BasicStatistics {
 export interface ThemeStatistics extends BasicStatistics {
   changesets: {
     total: number;
-    last: number;
-    lastUrl: string;
+    last: number | null;
+    lastUrl: string | null;
   };
 }
 
@@ -95,7 +95,7 @@ export class MapComplete {
   }
 
   // Lookup table
-  private readonly themeColors = {
+  private readonly themeColors: Record<string, string> = {
     default: "#70c549",
     advertising: "#fffe73",
     aed: "#008855",
@@ -130,13 +130,15 @@ export class MapComplete {
     this.logger.debug(`Getting theme details for ${theme} on ${host}`);
 
     // First check if we already have details for this theme
-    if (this.mapCompleteThemes.find((t) => t.id === theme)) {
+    const knownThemeDetails = this.mapCompleteThemes.find(
+      (t) => t.id === theme,
+    );
+    if (knownThemeDetails) {
       // We already have all details for this theme, return it
-      const themeDetails = this.mapCompleteThemes.find((t) => t.id === theme);
       return {
-        color: themeDetails.color,
-        icon: themeDetails.icon,
-        name: themeDetails.title,
+        color: knownThemeDetails.color,
+        icon: knownThemeDetails.icon,
+        name: knownThemeDetails.title,
       };
     } else {
       // We'll need to download the theme file, find the image and extract the color
@@ -179,7 +181,7 @@ export class MapComplete {
         } catch (e) {
           this.logger.error(
             `Failed to get color for ${theme} from ${image}, using default`,
-            e
+            e,
           );
           color = this.themeColors["default"];
         }
@@ -189,7 +191,7 @@ export class MapComplete {
           theme,
           color,
           image,
-          this.determineTitle(themeDetails.theme.title)
+          this.determineTitle(themeDetails.theme.title),
         );
       } else {
         // We don't have an image, use the default color
@@ -221,40 +223,46 @@ export class MapComplete {
     const userCount = new Set(changesets.map((c) => c.properties.uid)).size;
 
     // Users
-    let users = changesets.reduce((acc, cur) => {
-      // If the user is not in the object, add it
-      if (acc[cur.properties.user] === undefined) {
-        acc[cur.properties.user] = 0;
-      }
-      // Increase the count for the user
-      acc[cur.properties.user]++;
-      return acc;
-    }, {} as Record<string, number>);
+    let users = changesets.reduce(
+      (acc, cur) => {
+        // If the user is not in the object, add it
+        if (acc[cur.properties.user] === undefined) {
+          acc[cur.properties.user] = 0;
+        }
+        // Increase the count for the user
+        acc[cur.properties.user]++;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
     // Sort the users by the number of changesets
     users = Object.fromEntries(
-      Object.entries(users).sort(([, a], [, b]) => b - a)
+      Object.entries(users).sort(([, a], [, b]) => b - a),
     );
 
     // Unique themes
     const themeCount = new Set(
-      changesets.map((c) => c.properties.metadata["theme"])
+      changesets.map((c) => c.properties.metadata["theme"]),
     ).size;
 
     // Themes
-    let themes = changesets.reduce((acc, cur) => {
-      // Get the theme from the changeset
-      const theme = cur.properties.metadata["theme"];
-      // If the theme is not in the object, add it
-      if (acc[theme] === undefined) {
-        acc[theme] = 0;
-      }
-      // Increase the count for the theme
-      acc[theme]++;
-      return acc;
-    }, {} as Record<string, number>);
+    let themes = changesets.reduce(
+      (acc, cur) => {
+        // Get the theme from the changeset
+        const theme = cur.properties.metadata["theme"];
+        // If the theme is not in the object, add it
+        if (acc[theme] === undefined) {
+          acc[theme] = 0;
+        }
+        // Increase the count for the theme
+        acc[theme]++;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
     // Sort the themes by the number of changesets
     themes = Object.fromEntries(
-      Object.entries(themes).sort(([, a], [, b]) => b - a)
+      Object.entries(themes).sort(([, a], [, b]) => b - a),
     );
 
     // Make a list of colors for each changeset
@@ -270,7 +278,7 @@ export class MapComplete {
         // Add the theme to the list of themes, if it is not already there
         if (
           !this.mapCompleteThemes.find(
-            (t) => t.id === changeset.properties.metadata["theme"]
+            (t) => t.id === changeset.properties.metadata["theme"],
           )
         ) {
           this.mapCompleteThemes.push({
@@ -342,7 +350,7 @@ export class MapComplete {
     let lastId: number | null;
     let lastUser: string | null;
     let lastTheme: string | null;
-    let lastColor: string;
+    let lastColor: string | null;
     let lastColorRgb: [number, number, number] | null;
 
     // Check if we actually have any changesets before we try to get the last changeset
@@ -420,7 +428,7 @@ export class MapComplete {
    */
   public async getThemeStatistics(
     changesets: Changeset[],
-    theme: string
+    theme: string,
   ): Promise<ThemeStatistics> {
     // Filter the changesets for the given theme
     const themeChangesets = changesets
@@ -434,18 +442,21 @@ export class MapComplete {
       .size;
 
     // Users
-    let users = themeChangesets.reduce((acc, cur) => {
-      // If the user is not in the object, add it
-      if (acc[cur.properties.user] === undefined) {
-        acc[cur.properties.user] = 0;
-      }
-      // Increase the count for the user
-      acc[cur.properties.user]++;
-      return acc;
-    }, {} as Record<string, number>);
+    let users = themeChangesets.reduce(
+      (acc, cur) => {
+        // If the user is not in the object, add it
+        if (acc[cur.properties.user] === undefined) {
+          acc[cur.properties.user] = 0;
+        }
+        // Increase the count for the user
+        acc[cur.properties.user]++;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
     // Sort the users by the number of changesets
     users = Object.fromEntries(
-      Object.entries(users).sort(([, a], [, b]) => b - a)
+      Object.entries(users).sort(([, a], [, b]) => b - a),
     );
 
     // Total number of answered questions of all changesets for this theme
@@ -542,51 +553,21 @@ export class MapComplete {
    */
   private async getThemeFile(
     theme: string,
-    host: string
-  ): Promise<{ theme: Theme; baseUrl: string }> {
-    let url;
-    let baseUrl;
+    host: string,
+  ): Promise<{
+    theme: Theme;
+    baseUrl: string;
+  }> {
+    // If the theme is a full URL, we can use it directly, otherwise we need to construct the URL based on the host
+    const baseUrl = theme.startsWith("https://")
+      ? theme // Kinda useless
+      : host.replace(/\/[^/]*$/, "");
+    const url = theme.startsWith("https://")
+      ? theme
+      : `${baseUrl}/assets/themes/${theme}/${theme}.json`;
 
-    if (theme.startsWith("https://")) {
-      // External themes, we can download them from the given URL, no need to parse the host
-      baseUrl = theme; // This is technically not correct, but it's the best we can do
-      url = theme;
-    } else if (
-      host.startsWith("https://mapcomplete.osm.be/") ||
-      host.startsWith("https://mapcomplete.org/")
-    ) {
-      // Official themes, we can download them from the main repository on Forgejo
-      baseUrl =
-        "https://source.mapcomplete.org/MapComplete/MapComplete/raw/branch/master";
-      url = `${baseUrl}/assets/themes/${theme}/${theme}.json`;
-    } else if (host.startsWith("https://dev.mapcomplete.org/")) {
-      // Develop branch, we can download the theme from the develop branch on Forgejo
-      baseUrl =
-        "https://source.mapcomplete.org/MapComplete/MapComplete/raw/branch/develop";
-      url = `${baseUrl}/assets/themes/${theme}/${theme}.json`;
-    } else if (host.startsWith("https://pietervdvn.github.io/mc/")) {
-      // Development branches, we'll need to parse the branch from the url, for now we'll keep using GitHub for this
-      // Example: https://pietervdvn.github.io/mc/feature/maplibre/index.html
-      // Result: feature/maplibre
-      const parts = host.split("/").slice(4, -1);
-      const branch = parts.join("/");
-
-      baseUrl = `https://raw.githubusercontent.com/pietervdvn/MapComplete/${branch}`;
-      url = `${baseUrl}/assets/themes/${theme}/${theme}.json`;
-    } else {
-      // Return a default color and icon, as well as the theme id as name
-      this.logger.info(
-        `No theme file found for ${theme} on ${host}, returning default information`
-      );
-      return {
-        theme: {
-          id: theme,
-          icon: "https://raw.githubusercontent.com/pietervdvn/MapComplete/refs/heads/develop/assets/svg/add.svg",
-          title: theme,
-        },
-        baseUrl,
-      };
-    }
+    // Always log the actual URL we are fetching when a remote theme file is used.
+    this.logger.debug(`Fetching theme file from URL: ${url}`);
 
     // Download the theme file
     const themeFile = await fetch(url);

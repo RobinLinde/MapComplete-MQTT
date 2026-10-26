@@ -31,9 +31,9 @@ const logger = createLogger({
       format: format.combine(
         format.timestamp(),
         format.printf(
-          (info) => `${info.timestamp} ${info.level}: ${info.message} ()`
+          (info) => `${info.timestamp} ${info.level}: ${info.message} ()`,
         ),
-        format.colorize({ all: true })
+        format.colorize({ all: true }),
       ),
     }),
     new transports.File({
@@ -51,7 +51,7 @@ if (process.env.OSMCHA_TOKEN === undefined) {
 
 // Variables for storing the changesets
 let lastUpdateTime = new Date(
-  new Date().setHours(0, 0, 0, 0) - 24 * 60 * 60 * 1000
+  new Date().setHours(0, 0, 0, 0) - 24 * 60 * 60 * 1000,
 ).getTime();
 let mapCompleteChangesets: Changeset[] = [];
 const mapCompleteThemes: ExtendedTheme[] = [];
@@ -114,8 +114,8 @@ async function update(client: AsyncMqttClient | FakeClient) {
   let newDay = false;
   logger.info(
     `Performing update, last update was at ${new Date(
-      lastUpdateTime
-    ).toISOString()}`
+      lastUpdateTime,
+    ).toISOString()}`,
   );
   // Check if the last update time is still today
   if (new Date(lastUpdateTime).getDate() !== new Date().getDate()) {
@@ -155,22 +155,22 @@ async function update(client: AsyncMqttClient | FakeClient) {
 
     // Log the statistics
     logger.info(
-      `Total changesets for today: ${statistics.changesets.total} by ${statistics.users.total} users, using ${statistics.themes.total} different themes`
+      `Total changesets for today: ${statistics.changesets.total} by ${statistics.users.total} users, using ${statistics.themes.total} different themes`,
     );
     logger.info(
       `Top 5 users: ${Object.entries(statistics.users.users)
         .slice(0, 5)
         .map(([user, count]) => `${user} (${count})`)
-        .join(", ")}`
+        .join(", ")}`,
     );
     logger.info(
       `Top 5 themes: ${Object.entries(statistics.themes.themes)
         .slice(0, 5)
         .map(([theme, count]) => `${theme} (${count})`)
-        .join(", ")}`
+        .join(", ")}`,
     );
     logger.info(
-      `Total questions answered: ${statistics.questions}, total images added: ${statistics.images}, total points added: ${statistics.points}, total items imported: ${statistics.import}`
+      `Total questions answered: ${statistics.questions}, total images added: ${statistics.images}, total points added: ${statistics.points}, total items imported: ${statistics.import}`,
     );
 
     if (debug) {
@@ -190,7 +190,7 @@ async function update(client: AsyncMqttClient | FakeClient) {
     // Update the lastChangesetTime
     lastUpdateTime = new Date().getTime();
   } catch (error) {
-    logger.error("Error while updating statistics", error, error.stack);
+    logger.error("Error while updating statistics", error);
   }
 
   // Clean up sensors for themes we don't have data for yet/any more
@@ -207,7 +207,7 @@ async function update(client: AsyncMqttClient | FakeClient) {
  */
 async function publishStatistics(
   client: AsyncMqttClient | FakeClient,
-  statistics: Statistics
+  statistics: Statistics,
 ) {
   // Publish the statistics to MQTT
   logger.info("Publishing statistics to MQTT");
@@ -231,7 +231,7 @@ async function publishStatistics(
           JSON.stringify(subValue),
           {
             retain: true,
-          }
+          },
         );
       }
       // Also publish the whole object
@@ -240,7 +240,7 @@ async function publishStatistics(
         JSON.stringify(value),
         {
           retain: true,
-        }
+        },
       );
     } else if (typeof value === "number") {
       await client.publish(`mapcomplete/statistics/${key}`, value.toString(), {
@@ -256,7 +256,7 @@ async function publishStatistics(
         JSON.stringify(value),
         {
           retain: true,
-        }
+        },
       );
     }
   }
@@ -269,14 +269,14 @@ async function publishStatistics(
  */
 async function publishThemeData(
   client: AsyncMqttClient | FakeClient,
-  themes: Record<string, number>
+  themes: Record<string, number>,
 ) {
   // Loop through the themes
   for (const theme of Object.keys(themes)) {
     // Get the rest of the statistics for this theme
     const themeStatistics = await mapComplete.getThemeStatistics(
       mapCompleteChangesets,
-      theme
+      theme,
     );
 
     // Clean the theme name
@@ -288,7 +288,7 @@ async function publishThemeData(
       JSON.stringify(themeStatistics),
       {
         retain: true,
-      }
+      },
     );
 
     // Also everything to its own topic
@@ -307,7 +307,7 @@ async function publishThemeData(
             JSON.stringify(subValue),
             {
               retain: true,
-            }
+            },
           );
         }
         // Also publish the whole object
@@ -316,7 +316,7 @@ async function publishThemeData(
           JSON.stringify(value),
           {
             retain: true,
-          }
+          },
         );
       } else if (typeof value === "number") {
         await client.publish(
@@ -324,7 +324,7 @@ async function publishThemeData(
           value.toString(),
           {
             retain: true,
-          }
+          },
         );
       } else if (typeof value === "string") {
         await client.publish(
@@ -332,7 +332,7 @@ async function publishThemeData(
           value,
           {
             retain: true,
-          }
+          },
         );
       } else {
         await client.publish(
@@ -340,7 +340,7 @@ async function publishThemeData(
           JSON.stringify(value),
           {
             retain: true,
-          }
+          },
         );
       }
     }
@@ -353,7 +353,7 @@ async function publishThemeData(
         themeDetails.icon,
         {
           retain: true,
-        }
+        },
       );
     }
   }

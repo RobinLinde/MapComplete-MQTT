@@ -25,6 +25,9 @@ export default class FakeClient {
     const parts = topic.split("/");
     let current = this.data;
     for (const part of parts) {
+      if (!current.children) {
+        current.children = [];
+      }
       let child = current.children.find((c) => c.topic === part);
       if (!child) {
         child = { topic: part, children: [] };
@@ -34,7 +37,7 @@ export default class FakeClient {
     }
     if (!message) {
       this.logger.warn(
-        `FakeClient.saveMessage(${topic}, ${message}) - message is undefined, overwriting with an empty string`
+        `FakeClient.saveMessage(${topic}, ${message}) - message is undefined, overwriting with an empty string`,
       );
       current.message = "";
     } else {
@@ -45,10 +48,10 @@ export default class FakeClient {
   public publish(
     topic: string,
     message: string | Buffer,
-    opts?: IClientPublishOptions
+    opts?: IClientPublishOptions,
   ): Promise<void> {
     this.logger.debug(
-      `FakeClient.publish(${topic}, ${message}, ${JSON.stringify(opts)})`
+      `FakeClient.publish(${topic}, ${message}, ${JSON.stringify(opts)})`,
     );
     // Also save it to the data object
     this.saveMessage(topic, message);
